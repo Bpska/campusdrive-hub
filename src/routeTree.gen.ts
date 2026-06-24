@@ -18,6 +18,7 @@ import { Route as AppStaffRouteImport } from './routes/_app.staff'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppReportsRouteImport } from './routes/_app.reports'
 import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
+import { Route as AppMyCallsRouteImport } from './routes/_app.my-calls'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppActivityRouteImport } from './routes/_app.activity'
 
@@ -65,6 +66,11 @@ const AppNotificationsRoute = AppNotificationsRouteImport.update({
   path: '/notifications',
   getParentRoute: () => AppRoute,
 } as any)
+const AppMyCallsRoute = AppMyCallsRouteImport.update({
+  id: '/my-calls',
+  path: '/my-calls',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/activity': typeof AppActivityRoute
   '/dashboard': typeof AppDashboardRoute
+  '/my-calls': typeof AppMyCallsRoute
   '/notifications': typeof AppNotificationsRoute
   '/reports': typeof AppReportsRoute
   '/settings': typeof AppSettingsRoute
@@ -93,6 +100,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/activity': typeof AppActivityRoute
   '/dashboard': typeof AppDashboardRoute
+  '/my-calls': typeof AppMyCallsRoute
   '/notifications': typeof AppNotificationsRoute
   '/reports': typeof AppReportsRoute
   '/settings': typeof AppSettingsRoute
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_app/activity': typeof AppActivityRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/my-calls': typeof AppMyCallsRoute
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/reports': typeof AppReportsRoute
   '/_app/settings': typeof AppSettingsRoute
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/activity'
     | '/dashboard'
+    | '/my-calls'
     | '/notifications'
     | '/reports'
     | '/settings'
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/activity'
     | '/dashboard'
+    | '/my-calls'
     | '/notifications'
     | '/reports'
     | '/settings'
@@ -146,6 +157,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_app/activity'
     | '/_app/dashboard'
+    | '/_app/my-calls'
     | '/_app/notifications'
     | '/_app/reports'
     | '/_app/settings'
@@ -225,6 +237,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppNotificationsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/my-calls': {
+      id: '/_app/my-calls'
+      path: '/my-calls'
+      fullPath: '/my-calls'
+      preLoaderRoute: typeof AppMyCallsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -245,6 +264,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppActivityRoute: typeof AppActivityRoute
   AppDashboardRoute: typeof AppDashboardRoute
+  AppMyCallsRoute: typeof AppMyCallsRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppReportsRoute: typeof AppReportsRoute
   AppSettingsRoute: typeof AppSettingsRoute
@@ -256,6 +276,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppActivityRoute: AppActivityRoute,
   AppDashboardRoute: AppDashboardRoute,
+  AppMyCallsRoute: AppMyCallsRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppReportsRoute: AppReportsRoute,
   AppSettingsRoute: AppSettingsRoute,
