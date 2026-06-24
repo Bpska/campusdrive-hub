@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppVisitsRouteImport } from './routes/_app.visits'
 import { Route as AppStudentsRouteImport } from './routes/_app.students'
 import { Route as AppStaffRouteImport } from './routes/_app.staff'
+import { Route as AppReportsRouteImport } from './routes/_app.reports'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppActivityRouteImport } from './routes/_app.activity'
 
@@ -47,6 +48,11 @@ const AppStaffRoute = AppStaffRouteImport.update({
   path: '/staff',
   getParentRoute: () => AppRoute,
 } as any)
+const AppReportsRoute = AppReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -63,6 +69,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/activity': typeof AppActivityRoute
   '/dashboard': typeof AppDashboardRoute
+  '/reports': typeof AppReportsRoute
   '/staff': typeof AppStaffRoute
   '/students': typeof AppStudentsRoute
   '/visits': typeof AppVisitsRoute
@@ -72,6 +79,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/activity': typeof AppActivityRoute
   '/dashboard': typeof AppDashboardRoute
+  '/reports': typeof AppReportsRoute
   '/staff': typeof AppStaffRoute
   '/students': typeof AppStudentsRoute
   '/visits': typeof AppVisitsRoute
@@ -83,6 +91,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_app/activity': typeof AppActivityRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/reports': typeof AppReportsRoute
   '/_app/staff': typeof AppStaffRoute
   '/_app/students': typeof AppStudentsRoute
   '/_app/visits': typeof AppVisitsRoute
@@ -94,6 +103,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/activity'
     | '/dashboard'
+    | '/reports'
     | '/staff'
     | '/students'
     | '/visits'
@@ -103,6 +113,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/activity'
     | '/dashboard'
+    | '/reports'
     | '/staff'
     | '/students'
     | '/visits'
@@ -113,6 +124,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_app/activity'
     | '/_app/dashboard'
+    | '/_app/reports'
     | '/_app/staff'
     | '/_app/students'
     | '/_app/visits'
@@ -168,6 +180,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppStaffRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/reports': {
+      id: '/_app/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof AppReportsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -188,6 +207,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppActivityRoute: typeof AppActivityRoute
   AppDashboardRoute: typeof AppDashboardRoute
+  AppReportsRoute: typeof AppReportsRoute
   AppStaffRoute: typeof AppStaffRoute
   AppStudentsRoute: typeof AppStudentsRoute
   AppVisitsRoute: typeof AppVisitsRoute
@@ -196,6 +216,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppActivityRoute: AppActivityRoute,
   AppDashboardRoute: AppDashboardRoute,
+  AppReportsRoute: AppReportsRoute,
   AppStaffRoute: AppStaffRoute,
   AppStudentsRoute: AppStudentsRoute,
   AppVisitsRoute: AppVisitsRoute,
