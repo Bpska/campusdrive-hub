@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies (including typescript and devDependencies)
-RUN npm ci
+RUN npm install
 
 # Copy the rest of the backend files
 COPY . .
@@ -31,7 +31,8 @@ ENV PORT=5000
 COPY package*.json ./
 
 # Install only production dependencies
-RUN npm ci --only=production
+RUN npm install --omit=dev
+
 
 # Copy compiled JavaScript files and assets from builder
 COPY --from=builder /app/dist ./dist
