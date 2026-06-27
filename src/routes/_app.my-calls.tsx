@@ -10,46 +10,68 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { STUDENTS, statusColor } from "@/lib/mock-data";
+import { statusColor } from "@/lib/mock-data";
+import { useQuery } from "@tanstack/react-query";
+import { studentApi } from "@/lib/api";
+import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/_app/my-calls")({
   component: MyCallsPage,
 });
 
 function MyCallsPage() {
-  const calls = STUDENTS.slice(0, 14).flatMap((s) =>
-    s.history.map((h) => ({ student: s.name, course: s.course, ...h })),
-  );
+  const { data: calls = [], isLoading, error } = useQuery({
+    queryKey: ["myCalls"],
+    queryFn: studentApi.getCalls,
+  });
+
   return (
     <div className="space-y-6">
       <PageHeader title="My calls" description="Every call you've logged, newest first." />
       <Card className="overflow-hidden border-border">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/40">
-              <TableHead>Date</TableHead>
-              <TableHead>Student</TableHead>
-              <TableHead>Course</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Remarks</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {calls.map((c) => (
-              <TableRow key={c.id}>
-                <TableCell className="whitespace-nowrap">{c.date}</TableCell>
-                <TableCell className="font-medium">{c.student}</TableCell>
-                <TableCell>{c.course}</TableCell>
-                <TableCell>
-                  <Badge variant="outline" className={statusColor(c.status)}>
-                    {c.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-muted-foreground">{c.remarks}</TableCell>
+        {isLoading ? (
+          <div className="flex py-20 items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : error ? (
+          <div className="py-20 text-center text-destructive">
+            Failed to load call history. Please try again.
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/40">
+                <TableHead>Date</TableHead>
+                <TableHead>Student</TableHead>
+                <TableHead>Course</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Remarks</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {calls.map((c) => (
+                <TableRow key={c.id}>
+                  <TableCell className="whitespace-nowrap">{c.date}</TableCell>
+                  <TableCell className="font-medium">{c.student}</TableCell>
+                  <TableCell>{c.course}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={statusColor(c.status)}>
+                      {c.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{c.remarks}</TableCell>
+                </TableRow>
+              ))}
+              {calls.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
+                    No calls logged yet.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        )}
       </Card>
     </div>
   );

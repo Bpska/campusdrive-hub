@@ -58,15 +58,13 @@ export interface Student {
   name: string;
   fatherName: string;
   mobile: string;
-  email: string;
   address: string;
-  exam: "JEE Main" | "OJEE" | "Both";
+  exam: "JEE Main" | "OJEE" | "Special OJEE" | "Both";
   course: string;
   visitDate: string | null;
   status: CallStatus;
   remarks: string;
   assignedTo: string;
-  source: string;
   history: CallLog[];
 }
 
@@ -160,7 +158,7 @@ export const STUDENTS: Student[] = Array.from({ length: 48 }).map((_, i) => {
     mobile: `+91 ${70000 + Math.floor(seed(i + 21) * 29999)}${10000 + Math.floor(seed(i + 31) * 89999)}`.replace(/\s\s/, " "),
     email: `${fn.toLowerCase()}.${ln.toLowerCase()}${i}@gmail.com`,
     address: pick(CITIES, i + 2),
-    exam: (["JEE Main", "OJEE", "Both"] as const)[Math.floor(seed(i + 8) * 3)],
+    exam: (["JEE Main", "OJEE", "Special OJEE", "Both"] as const)[Math.floor(seed(i + 8) * 4)],
     course,
     visitDate: visit,
     status,

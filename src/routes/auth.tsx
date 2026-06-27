@@ -22,19 +22,17 @@ function AuthPage() {
 
   if (user) return <Navigate to="/dashboard" replace />;
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      const r = login(email.trim(), password);
-      setLoading(false);
-      if (!r.ok) {
-        toast.error(r.error ?? "Login failed");
-        return;
-      }
-      toast.success("Welcome back");
-      navigate({ to: "/dashboard" });
-    }, 350);
+    const r = await login(email.trim(), password);
+    setLoading(false);
+    if (!r.ok) {
+      toast.error(r.error ?? "Login failed");
+      return;
+    }
+    toast.success("Welcome back");
+    navigate({ to: "/dashboard" });
   };
 
   const useDemo = (role: "admin" | "staff") => {

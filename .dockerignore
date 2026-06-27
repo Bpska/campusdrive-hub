@@ -1,0 +1,16 @@
+node_modules
+dist
+.output
+.tanstack
+.git
+.gitignore
+Dockerfile
+docker-compose.yml
+backend
+nginx
+vps_deployment_guide.md
+*.md
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env*

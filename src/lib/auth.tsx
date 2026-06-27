@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { setAuthToken } from "./api";
 
 export type Role = "admin" | "staff";
 export interface User {
@@ -9,7 +10,7 @@ export interface User {
 
 interface AuthCtx {
   user: User | null;
-  login: (email: string, password: string) => { ok: boolean; error?: string };
+  login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => void;
 }
 
@@ -29,22 +30,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AuthCtx>(
     () => ({
       user,
-      login: (email, password) => {
-        if (email === "admin@crm.com" && password === "admin123") {
-          const u: User = { email, name: "Aarav Admin", role: "admin" };
+      login: async (email, password) => {
+        try {
+          const res = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email, password }),
+          });
+
+          const data = await res.json();
+          if (!res.ok) {
+            return { ok: false, error: data.error || "Login failed" };
+          }
+
+          const u: User = data.user;
+          setAuthToken(data.token);
           localStorage.setItem(KEY, JSON.stringify(u));
           setUser(u);
           return { ok: true };
+        } catch (error: any) {
+          console.error("Login request failed", error);
+          return { ok: false, error: error.message || "Failed to reach server" };
         }
-        if (email === "staff@crm.com" && password === "staff123") {
-          const u: User = { email, name: "Ravi Kapoor", role: "staff" };
-          localStorage.setItem(KEY, JSON.stringify(u));
-          setUser(u);
-          return { ok: true };
-        }
-        return { ok: false, error: "Invalid email or password" };
       },
       logout: () => {
+        setAuthToken(null);
         localStorage.removeItem(KEY);
         setUser(null);
       },

@@ -8,12 +8,9 @@ import {
   CalendarDays,
   CheckCircle2,
   UserCog,
+  Loader2,
 } from "lucide-react";
 import {
-  ACTIVITIES,
-  CALL_TRENDS,
-  STUDENTS,
-  dashboardStats,
   statusColor,
 } from "@/lib/mock-data";
 import {
@@ -29,9 +26,47 @@ import {
 } from "recharts";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useQuery } from "@tanstack/react-query";
+import { dashboardApi, studentApi, activityApi } from "@/lib/api";
 
 export function AdminDashboard() {
-  const upcoming = STUDENTS.filter((s) => s.visitDate).slice(0, 5);
+  const { data: dashData, isLoading: isDashLoading, error: dashError } = useQuery({
+    queryKey: ["dashboardStats"],
+    queryFn: dashboardApi.getStats,
+  });
+
+  const { data: studentsData, isLoading: isStudentsLoading } = useQuery({
+    queryKey: ["students", "upcoming-visits"],
+    queryFn: () => studentApi.list({ limit: 100 }),
+  });
+
+  const { data: activitiesData, isLoading: isActivitiesLoading } = useQuery({
+    queryKey: ["activities"],
+    queryFn: activityApi.list,
+  });
+
+  const isLoading = isDashLoading || isStudentsLoading || isActivitiesLoading;
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (dashError || !dashData) {
+    return (
+      <div className="rounded-lg border border-destructive bg-destructive/10 p-4 text-destructive">
+        Failed to load dashboard data. Please try again.
+      </div>
+    );
+  }
+
+  const { stats, callTrends } = dashData;
+  const upcoming = (studentsData?.students || []).filter((s) => s.visitDate).slice(0, 5);
+  const recentActivities = activitiesData || [];
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -40,12 +75,12 @@ export function AdminDashboard() {
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-        <StatCard label="Total Leads" value={dashboardStats.totalLeads} icon={Users} trend="+12% this week" />
-        <StatCard label="Total Calls" value={dashboardStats.totalCalls} icon={PhoneCall} tone="sky" trend="+5.2%" />
-        <StatCard label="Interested" value={dashboardStats.interested} icon={Heart} tone="violet" />
-        <StatCard label="Visits Scheduled" value={dashboardStats.visitsScheduled} icon={CalendarDays} tone="amber" />
-        <StatCard label="Admissions" value={dashboardStats.admissions} icon={CheckCircle2} tone="emerald" trend="+8 today" />
-        <StatCard label="Staff" value={dashboardStats.staffCount} icon={UserCog} tone="rose" />
+        <StatCard label="Total Leads" value={stats.totalLeads} icon={Users} trend="+12% this week" />
+        <StatCard label="Total Calls" value={stats.totalCalls} icon={PhoneCall} tone="sky" trend="+5.2%" />
+        <StatCard label="Interested" value={stats.interested} icon={Heart} tone="violet" />
+        <StatCard label="Visits Scheduled" value={stats.visitsScheduled} icon={CalendarDays} tone="amber" />
+        <StatCard label="Admissions" value={stats.admissions} icon={CheckCircle2} tone="emerald" trend="+8 today" />
+        <StatCard label="Staff" value={stats.staffCount} icon={UserCog} tone="rose" />
       </div>
 
       <Card className="border-border">
@@ -61,7 +96,7 @@ export function AdminDashboard() {
             </TabsList>
             <TabsContent value="daily" className="h-72">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={CALL_TRENDS.daily}>
+                <LineChart data={callTrends.daily}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="day" stroke="currentColor" fontSize={12} />
                   <YAxis stroke="currentColor" fontSize={12} />
@@ -72,7 +107,7 @@ export function AdminDashboard() {
             </TabsContent>
             <TabsContent value="weekly" className="h-72">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={CALL_TRENDS.weekly}>
+                <BarChart data={callTrends.weekly}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="week" fontSize={12} />
                   <YAxis fontSize={12} />
@@ -83,7 +118,7 @@ export function AdminDashboard() {
             </TabsContent>
             <TabsContent value="monthly" className="h-72">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={CALL_TRENDS.monthly}>
+                <BarChart data={callTrends.monthly}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="month" fontSize={12} />
                   <YAxis fontSize={12} />
@@ -103,7 +138,7 @@ export function AdminDashboard() {
           </CardHeader>
           <CardContent className="space-y-0">
             <div className="divide-y divide-border">
-              {ACTIVITIES.slice(0, 8).map((a) => (
+              {recentActivities.slice(0, 8).map((a) => (
                 <div key={a.id} className="flex items-center gap-3 py-3 text-sm">
                   <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
                     {a.actor.split(" ").map((x) => x[0]).join("").slice(0, 2)}
@@ -120,6 +155,11 @@ export function AdminDashboard() {
                   </div>
                 </div>
               ))}
+              {recentActivities.length === 0 && (
+                <div className="py-6 text-center text-sm text-muted-foreground">
+                  No recent activities.
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -142,6 +182,11 @@ export function AdminDashboard() {
                 </div>
               </div>
             ))}
+            {upcoming.length === 0 && (
+              <div className="py-6 text-center text-sm text-muted-foreground">
+                No upcoming visits scheduled.
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

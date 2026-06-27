@@ -1,5 +1,7 @@
-import { Bell, Search, Menu } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Bell, Search, Menu, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,11 +13,44 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/lib/auth";
 import { Link } from "@tanstack/react-router";
-import { NOTIFICATIONS } from "@/lib/mock-data";
+import { useQuery } from "@tanstack/react-query";
+import { notificationApi } from "@/lib/api";
 
 export function TopNav({ onMenu }: { onMenu: () => void }) {
   const { user, logout } = useAuth();
-  const unread = NOTIFICATIONS.filter((n) => !n.read).length;
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then((choiceResult: any) => {
+      if (choiceResult.outcome === "accepted") {
+        console.log("User accepted PWA installation");
+        setDeferredPrompt(null);
+      }
+    });
+  };
+  
+  const { data: notifications = [] } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: notificationApi.list,
+    enabled: !!user,
+  });
+
+  const unread = notifications.filter((n) => !n.read).length;
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-card/95 px-4 backdrop-blur md:px-6">
@@ -31,6 +66,17 @@ export function TopNav({ onMenu }: { onMenu: () => void }) {
         <Input placeholder="Search students, staff, leads…" className="pl-9" />
       </div>
       <div className="flex-1 md:hidden" />
+      {deferredPrompt && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5 text-primary border-primary/20 bg-primary/5 hover:bg-primary/10 h-9 font-semibold text-xs transition-all duration-200 animate-pulse"
+          onClick={handleInstallClick}
+        >
+          <Download className="h-3.5 w-3.5" />
+          Install App
+        </Button>
+      )}
       <Link
         to="/notifications"
         className="relative grid h-9 w-9 place-items-center rounded-md border border-border text-foreground hover:bg-accent"
@@ -47,7 +93,7 @@ export function TopNav({ onMenu }: { onMenu: () => void }) {
           <button className="flex items-center gap-2 rounded-md border border-border bg-card px-2 py-1 hover:bg-accent">
             <Avatar className="h-7 w-7">
               <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
-                {user?.name.split(" ").map((s) => s[0]).join("").slice(0, 2)}
+                {user?.name ? user.name.split(" ").map((s) => s[0]).join("").slice(0, 2) : "US"}
               </AvatarFallback>
             </Avatar>
             <div className="hidden text-left sm:block">
