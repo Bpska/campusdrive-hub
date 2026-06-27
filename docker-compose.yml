@@ -33,8 +33,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    ports:
-      - "5000:5000"
 
   frontend:
     build:
@@ -45,8 +43,7 @@ services:
     environment:
       PORT: 3000
       NODE_ENV: production
-    ports:
-      - "3000:3000"
+
 
   nginx:
     image: nginx:alpine
