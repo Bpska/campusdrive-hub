@@ -38,11 +38,10 @@ self.addEventListener("activate", (e) => {
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
 
-  // Skip caching for API, sw.js, Vite HMR/dev assets, Chrome extensions, and non-GET requests
+  // Skip intercepting for non-GET, sw.js, Vite HMR/dev assets, Chrome extensions
   if (
     e.request.method !== "GET" ||
     url.pathname === "/sw.js" ||
-    url.pathname.startsWith("/api") ||
     url.pathname.startsWith("/@id") ||
     url.pathname.startsWith("/@vite") ||
     url.pathname.endsWith(".ts") ||
@@ -50,20 +49,23 @@ self.addEventListener("fetch", (e) => {
     url.searchParams.has("t") ||
     !e.request.url.startsWith(self.location.origin)
   ) {
+    return; // Let the browser handle these normally
+  }
+
+  // Handle API requests (network-only, return offline error JSON on network failure)
+  if (url.pathname.startsWith("/api")) {
     e.respondWith(
       fetch(e.request).catch(() => {
-        if (url.pathname.startsWith("/api")) {
-          return new Response(
-            JSON.stringify({ error: "Offline: Network request failed." }),
-            { headers: { "Content-Type": "application/json" } }
-          );
-        }
+        return new Response(
+          JSON.stringify({ error: "Offline: Network request failed." }),
+          { headers: { "Content-Type": "application/json" } }
+        );
       })
     );
     return;
   }
 
-  // Caching strategy: Network first with Cache fallback for navigations/assets
+  // Caching strategy for pages & assets: Network first with Cache fallback
   e.respondWith(
     fetch(e.request)
       .then((response) => {

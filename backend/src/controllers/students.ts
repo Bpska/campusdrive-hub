@@ -7,6 +7,7 @@ export const getStudents = async (req: AuthenticatedRequest, res: Response) => {
   const query = (req.query.q as string || "").toLowerCase();
   const statusFilter = req.query.status as string || "all";
   const examFilter = req.query.exam as string || "all";
+  const districtFilter = req.query.district as string || "all";
   const sortKey = req.query.sort as string || "name";
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
@@ -32,6 +33,12 @@ export const getStudents = async (req: AuthenticatedRequest, res: Response) => {
     if (examFilter !== "all") {
       sql += ` AND exam = $${paramIndex}`;
       params.push(examFilter);
+      paramIndex++;
+    }
+
+    if (districtFilter !== "all") {
+      sql += ` AND LOWER(TRIM(address)) = $${paramIndex}`;
+      params.push(districtFilter.toLowerCase().trim());
       paramIndex++;
     }
 
@@ -67,11 +74,18 @@ export const getStudents = async (req: AuthenticatedRequest, res: Response) => {
       assignedTo: row.assigned_to,
     }));
 
+    // Fetch unique districts for filter dropdown (capitalized and trimmed)
+    const districtsRes = await pool.query(
+      "SELECT DISTINCT INITCAP(TRIM(address)) as district FROM students WHERE address IS NOT NULL AND address != '' ORDER BY district ASC"
+    );
+    const districts = districtsRes.rows.map(row => row.district);
+
     res.json({
       students,
       total,
       page,
       totalPages: limit > 0 ? (Math.ceil(total / limit) || 1) : 1,
+      districts,
     });
   } catch (error) {
     console.error("Get students error:", error);

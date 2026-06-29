@@ -42,14 +42,16 @@ export interface StudentsResponse {
   total: number;
   page: number;
   totalPages: number;
+  districts?: string[];
 }
 
 export const studentApi = {
-  list: (params: { q?: string; status?: string; exam?: string; sort?: string; page?: number; limit?: number }) => {
+  list: (params: { q?: string; status?: string; exam?: string; district?: string; sort?: string; page?: number; limit?: number }) => {
     const queryParams = new URLSearchParams();
     if (params.q) queryParams.set("q", params.q);
     if (params.status) queryParams.set("status", params.status);
     if (params.exam) queryParams.set("exam", params.exam);
+    if (params.district) queryParams.set("district", params.district);
     if (params.sort) queryParams.set("sort", params.sort);
     if (params.page) queryParams.set("page", String(params.page));
     if (params.limit) queryParams.set("limit", String(params.limit));

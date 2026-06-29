@@ -114,6 +114,7 @@ function StudentsPage() {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [examFilter, setExamFilter] = useState<string>("all");
+  const [districtFilter, setDistrictFilter] = useState<string>("all");
   const [sortKey, setSortKey] = useState<string>("name");
   const [page, setPage] = useState(1);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -130,8 +131,8 @@ function StudentsPage() {
   const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["students", { query, statusFilter, examFilter, sortKey, page }],
-    queryFn: () => studentApi.list({ q: query, status: statusFilter, exam: examFilter, sort: sortKey, page, limit: pageSize }),
+    queryKey: ["students", { query, statusFilter, examFilter, districtFilter, sortKey, page }],
+    queryFn: () => studentApi.list({ q: query, status: statusFilter, exam: examFilter, district: districtFilter, sort: sortKey, page, limit: pageSize }),
   });
 
   const deleteMutation = useMutation({
@@ -550,8 +551,8 @@ function StudentsPage() {
       />
 
       <Card className="border-border p-4">
-        <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto_auto]">
-          <div className="relative">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_auto_auto_auto_auto]">
+          <div className="relative col-span-full lg:col-span-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search name, mobile, course…"
@@ -564,7 +565,7 @@ function StudentsPage() {
             />
           </div>
           <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
-            <SelectTrigger className="w-full sm:w-48">
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Filter status" />
             </SelectTrigger>
             <SelectContent>
@@ -575,7 +576,7 @@ function StudentsPage() {
             </SelectContent>
           </Select>
           <Select value={examFilter} onValueChange={(v) => { setExamFilter(v); setPage(1); }}>
-            <SelectTrigger className="w-full sm:w-44">
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Filter exam" />
             </SelectTrigger>
             <SelectContent>
@@ -586,8 +587,19 @@ function StudentsPage() {
               <SelectItem value="Both">Both</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={districtFilter} onValueChange={(v) => { setDistrictFilter(v); setPage(1); }}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Filter district" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Districts</SelectItem>
+              {data?.districts?.map((d) => (
+                <SelectItem key={d} value={d}>{d}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Select value={sortKey} onValueChange={(v) => setSortKey(v)}>
-            <SelectTrigger className="w-full sm:w-44">
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
