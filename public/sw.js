@@ -38,8 +38,18 @@ self.addEventListener("activate", (e) => {
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
 
-  // Skip caching for backend API requests, Chrome extensions, etc.
-  if (url.pathname.startsWith("/api") || !e.request.url.startsWith(self.location.origin)) {
+  // Skip caching for API, sw.js, Vite HMR/dev assets, Chrome extensions, and non-GET requests
+  if (
+    e.request.method !== "GET" ||
+    url.pathname === "/sw.js" ||
+    url.pathname.startsWith("/api") ||
+    url.pathname.startsWith("/@id") ||
+    url.pathname.startsWith("/@vite") ||
+    url.pathname.endsWith(".ts") ||
+    url.pathname.endsWith(".tsx") ||
+    url.searchParams.has("t") ||
+    !e.request.url.startsWith(self.location.origin)
+  ) {
     e.respondWith(
       fetch(e.request).catch(() => {
         if (url.pathname.startsWith("/api")) {
