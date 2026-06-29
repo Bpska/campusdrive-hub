@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getStudents, getStudentById, createStudent, updateStudent, logCall, getCallLogs, deleteStudent, bulkCreateStudents } from "../controllers/students";
+import { getStudents, getStudentById, createStudent, updateStudent, logCall, getCallLogs, deleteStudent, bulkCreateStudents, deleteAllStudents } from "../controllers/students";
 import { authenticateToken, requireAdmin } from "../middleware/auth";
 
 const router = Router();
@@ -13,6 +13,7 @@ router.get("/:id", getStudentById as any);
 router.post("/", createStudent as any);
 router.put("/:id", updateStudent as any);
 router.post("/:id/calls", logCall as any);
+router.delete("/", requireAdmin as any, deleteAllStudents as any);
 router.delete("/:id", requireAdmin as any, deleteStudent as any);
 
 export default router;

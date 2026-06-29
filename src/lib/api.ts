@@ -97,6 +97,12 @@ export const studentApi = {
       method: "DELETE",
     });
   },
+
+  deleteAll: () => {
+    return request<{ message: string }>("/api/students", {
+      method: "DELETE",
+    });
+  },
 };
 
 // Staff API

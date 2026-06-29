@@ -523,6 +523,40 @@ export const deleteStudent = async (req: AuthenticatedRequest, res: Response) =>
   }
 };
 
+// Delete all student leads
+export const deleteAllStudents = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      // 1. Delete all students (call_logs will cascade delete because of the ON DELETE CASCADE constraint)
+      await client.query("DELETE FROM students");
+
+      // 2. Set assigned leads to 0 for all users since there are no students left
+      await client.query("UPDATE users SET assigned_leads = 0");
+
+      // 3. Log Activity
+      const actorName = req.user?.name || "System";
+      await client.query(
+        "INSERT INTO activities (actor, action, target) VALUES ($1, $2, $3)",
+        [actorName, "deleted all student leads", "All Students"]
+      );
+
+      await client.query("COMMIT");
+      res.json({ message: "All student leads and call history deleted successfully" });
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error("Delete all students error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 // Bulk create students
 export const bulkCreateStudents = async (req: AuthenticatedRequest, res: Response) => {
   const { students } = req.body;

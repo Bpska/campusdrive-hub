@@ -123,6 +123,8 @@ function StudentsPage() {
   const [shareStudent, setShareStudent] = useState<Student | null>(null);
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteText, setPasteText] = useState("");
+  const [deleteAllOpen, setDeleteAllOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
   const pageSize = 8;
 
   const queryClient = useQueryClient();
@@ -142,6 +144,21 @@ function StudentsPage() {
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to delete lead");
+    },
+  });
+
+  const deleteAllMutation = useMutation({
+    mutationFn: () => studentApi.deleteAll(),
+    onSuccess: () => {
+      toast.success("All student leads deleted successfully");
+      setDeleteAllOpen(false);
+      setConfirmText("");
+      queryClient.invalidateQueries({ queryKey: ["students"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboardStats"] });
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to delete all student leads");
     },
   });
 
@@ -520,6 +537,11 @@ function StudentsPage() {
             >
               <Clipboard className="mr-2 h-4 w-4" /> Paste & Upload
             </Button>
+            {user?.role === "admin" && (
+              <Button variant="destructive" onClick={() => setDeleteAllOpen(true)}>
+                <Trash2 className="mr-2 h-4 w-4" /> Delete All Leads
+              </Button>
+            )}
             <Button onClick={() => setAddOpen(true)}>
               <Plus className="mr-2 h-4 w-4" /> Add Lead
             </Button>
@@ -921,6 +943,54 @@ function StudentsPage() {
             >
               {bulkUploadMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Upload Leads
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete All Confirmation Dialog */}
+      <Dialog open={deleteAllOpen} onOpenChange={setDeleteAllOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-destructive flex items-center gap-2">
+              <Trash2 className="h-5 w-5" /> Delete All Student Leads
+            </DialogTitle>
+            <DialogDescription>
+              Are you absolutely sure you want to delete all student leads? This action is permanent and cannot be undone. All call history and logs associated with students will also be permanently deleted.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-2">
+            <p className="text-sm font-medium text-foreground">
+              Please type <strong className="text-destructive font-bold select-none">DELETE ALL</strong> to confirm:
+            </p>
+            <Input
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder="DELETE ALL"
+              className="border-destructive focus-visible:ring-destructive"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setDeleteAllOpen(false); setConfirmText(""); }} disabled={deleteAllMutation.isPending}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (confirmText !== "DELETE ALL") {
+                  toast.error("Confirmation text does not match.");
+                  return;
+                }
+                deleteAllMutation.mutate();
+              }}
+              disabled={deleteAllMutation.isPending || confirmText !== "DELETE ALL"}
+            >
+              {deleteAllMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="mr-2 h-4 w-4" />
+              )}
+              Delete All
             </Button>
           </DialogFooter>
         </DialogContent>
