@@ -362,10 +362,10 @@ function StudentsPage() {
         }
         
         return {
-          name: getVal(["name", "student name", "student_name", "full name", "fullname"]),
-          mobile: getVal(["mobile", "mobile number", "mobile_number", "phone", "number", "phone number", "phone_number"]),
+          name: getVal(["student", "name", "student name", "student_name", "full name", "fullname"]),
+          mobile: getVal(["contact", "mobile", "mobile number", "mobile_number", "phone", "number", "phone number", "phone_number"]),
           fatherName: getVal(["father name", "father's name", "father_name", "fathername"]),
-          address: getVal(["address", "city", "permanent address"]),
+          address: getVal(["district", "address", "city", "permanent address"]),
           exam: examVal,
           course: getVal(["course", "course interest", "course_interest"]),
           status: getVal(["status", "call status", "call_status"]),
@@ -375,7 +375,7 @@ function StudentsPage() {
       }).filter(s => s.name && s.mobile);
       
       if (studentsToUpload.length === 0) {
-        toast.error("No valid leads found. Must contain 'Name' and 'Mobile' columns.");
+        toast.error("No valid leads found. Must contain 'Name' (or 'Student') and 'Mobile' (or 'Contact') columns.");
         return;
       }
       
@@ -813,7 +813,7 @@ function StudentsPage() {
           <DialogHeader>
             <DialogTitle>Paste CSV/Excel Data</DialogTitle>
             <DialogDescription>
-              Copy columns from Excel or Google Sheets (must contain <strong>Name</strong> and <strong>Mobile</strong>) and paste them below. Tab-separated (TSV) and comma-separated (CSV) formats are both automatically supported.
+              Copy columns from Excel or Google Sheets (must contain <strong>Name</strong> (or <strong>Student</strong>) and <strong>Mobile</strong> (or <strong>Contact</strong>)) and paste them below. Tab-separated (TSV) and comma-separated (CSV) formats are both automatically supported.
             </DialogDescription>
           </DialogHeader>
           <div className="py-2">
