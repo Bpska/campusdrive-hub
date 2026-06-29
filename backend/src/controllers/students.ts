@@ -120,6 +120,17 @@ export const getStudentById = async (req: AuthenticatedRequest, res: Response) =
   }
 };
 
+// Normalize exam value to fit database CHECK constraints
+const normalizeExam = (exam: string | undefined | null): "JEE Main" | "OJEE" | "Special OJEE" | "Both" => {
+  if (!exam) return "JEE Main";
+  const str = String(exam).trim().toLowerCase();
+  if (str.includes("special") && str.includes("ojee")) return "Special OJEE";
+  if (str.includes("jee")) return "JEE Main";
+  if (str.includes("ojee")) return "OJEE";
+  if (str.includes("both")) return "Both";
+  return "JEE Main"; // fallback default
+};
+
 // Create a new student lead
 export const createStudent = async (req: AuthenticatedRequest, res: Response) => {
   const { name, mobile, fatherName, address, exam, course, status, remarks, assignedTo } = req.body;
@@ -137,7 +148,7 @@ export const createStudent = async (req: AuthenticatedRequest, res: Response) =>
     const finalAssignedTo = assignedTo || req.user?.name || "Unassigned";
     const finalFatherName = fatherName || "";
     const finalAddress = address || "";
-    const finalExam = exam || "JEE Main";
+    const finalExam = normalizeExam(exam);
     const finalCourse = course || "B.Tech CSE";
     const finalStatus = status || "Not Called";
 
@@ -210,7 +221,7 @@ export const updateStudent = async (req: AuthenticatedRequest, res: Response) =>
       fatherName || oldStudent.father_name,
       mobile || oldStudent.mobile,
       address || oldStudent.address,
-      exam || oldStudent.exam,
+      exam ? normalizeExam(exam) : oldStudent.exam,
       course || oldStudent.course,
       status || oldStudent.status,
       remarks !== undefined ? remarks : oldStudent.remarks,
@@ -303,7 +314,7 @@ export const logCall = async (req: AuthenticatedRequest, res: Response) => {
     const updatedVisitDate = visitDate !== undefined ? visitDate : student.visit_date;
     const updatedAddress = address || student.address;
     const updatedFatherName = fatherName || student.father_name;
-    const updatedExam = exam || student.exam;
+    const updatedExam = exam ? normalizeExam(exam) : student.exam;
 
     await pool.query(
       `UPDATE students 
@@ -525,42 +536,64 @@ export const bulkCreateStudents = async (req: AuthenticatedRequest, res: Respons
     try {
       await client.query("BEGIN");
 
-      const inserted = [];
+      const inserted: any[] = [];
       const maxIdRes = await client.query("SELECT MAX(CAST(SUBSTRING(id, 4) AS INTEGER)) as max_val FROM students WHERE id LIKE 'STU%'");
       let currentMaxNum = maxIdRes.rows[0].max_val || 2000;
 
-      for (const s of students) {
-        const { name, mobile, fatherName, address, exam, course, status, remarks, assignedTo } = s;
-        if (!name || !mobile) continue;
+      const counselorLeadsMap = new Map<string, number>();
 
-        currentMaxNum++;
-        const newId = `STU${currentMaxNum}`;
-        const finalAssignedTo = assignedTo || req.user?.name || "Unassigned";
+      const batchSize = 1000;
+      for (let i = 0; i < students.length; i += batchSize) {
+        const batch = students.slice(i, i + batchSize);
+        const valuePlaceholders: string[] = [];
+        const values: any[] = [];
+        let paramIndex = 1;
 
-        const insertSql = `
-          INSERT INTO students (id, name, father_name, mobile, address, exam, course, status, remarks, assigned_to)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-          RETURNING id, name, father_name as "fatherName", mobile, address, exam, course, status, remarks, assigned_to as "assignedTo"
-        `;
+        for (const s of batch) {
+          const { name, mobile, fatherName, address, exam, course, status, remarks, assignedTo } = s;
+          if (!name || !mobile) continue;
 
-        const result = await client.query(insertSql, [
-          newId,
-          name.trim(),
-          fatherName || "",
-          mobile.trim(),
-          address || "",
-          exam || "OJEE",
-          course || "B.Tech CSE",
-          status || "Not Called",
-          remarks || "",
-          finalAssignedTo
-        ]);
-        inserted.push(result.rows[0]);
+          currentMaxNum++;
+          const newId = `STU${currentMaxNum}`;
+          const finalAssignedTo = assignedTo || req.user?.name || "Unassigned";
 
-        // Update user lead count
+          valuePlaceholders.push(`($${paramIndex}, $${paramIndex+1}, $${paramIndex+2}, $${paramIndex+3}, $${paramIndex+4}, $${paramIndex+5}, $${paramIndex+6}, $${paramIndex+7}, $${paramIndex+8}, $${paramIndex+9})`);
+          
+          values.push(
+            newId,
+            name.trim(),
+            fatherName || "",
+            mobile.trim(),
+            address || "",
+            normalizeExam(exam),
+            course || "B.Tech CSE",
+            status || "Not Called",
+            remarks || "",
+            finalAssignedTo
+          );
+
+          paramIndex += 10;
+
+          // Track counselor assignment count
+          counselorLeadsMap.set(finalAssignedTo, (counselorLeadsMap.get(finalAssignedTo) || 0) + 1);
+        }
+
+        if (values.length > 0) {
+          const insertSql = `
+            INSERT INTO students (id, name, father_name, mobile, address, exam, course, status, remarks, assigned_to)
+            VALUES ${valuePlaceholders.join(", ")}
+            RETURNING id, name, father_name as "fatherName", mobile, address, exam, course, status, remarks, assigned_to as "assignedTo"
+          `;
+          const result = await client.query(insertSql, values);
+          inserted.push(...result.rows);
+        }
+      }
+
+      // Batch update counselor lead counts
+      for (const [counselorName, count] of counselorLeadsMap.entries()) {
         await client.query(
-          "UPDATE users SET assigned_leads = assigned_leads + 1 WHERE name = $1",
-          [finalAssignedTo]
+          "UPDATE users SET assigned_leads = assigned_leads + $1 WHERE name = $2",
+          [count, counselorName]
         );
       }
 

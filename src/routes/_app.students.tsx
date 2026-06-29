@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,17 +21,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CALL_STATUSES, statusColor, type Student } from "@/lib/mock-data";
-import { ChevronLeft, ChevronRight, Download, Search, Upload, Loader2, Plus, Phone, Trash2, Pencil, Check, X, Mail, Share2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Search, Upload, Loader2, Plus, Phone, Trash2, Pencil, Check, X, Mail, Share2, Clipboard } from "lucide-react";
 import { StudentDrawer } from "@/components/app/student-drawer";
 import { CallUpdateModal } from "@/components/app/call-modal";
 import { StudentModal } from "@/components/app/student-modal";
 import { ShareModal } from "@/components/app/share-modal";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { studentApi } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
-const COURSES = [
+const PRESET_COURSES = [
   "B.Tech CSE",
   "B.Tech ECE",
   "B.Tech Mechanical",
@@ -41,6 +43,67 @@ const COURSES = [
   "B.Pharm",
   "BCA",
 ];
+
+/** Inline hybrid course selector for table row editing */
+function InlineCourseField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const isCustom = value !== "" && !PRESET_COURSES.includes(value);
+  const [selectVal, setSelectVal] = useState<string>(isCustom ? "__other__" : value);
+  const [customVal, setCustomVal] = useState<string>(isCustom ? value : "");
+
+  const handleSelectChange = (v: string) => {
+    setSelectVal(v);
+    if (v === "__other__") {
+      onChange(customVal);
+    } else {
+      setCustomVal("");
+      onChange(v);
+    }
+  };
+
+  useEffect(() => {
+    const newIsCustom = value !== "" && !PRESET_COURSES.includes(value);
+    if (newIsCustom) {
+      setSelectVal("__other__");
+      setCustomVal(value);
+    } else {
+      setSelectVal(value);
+      setCustomVal("");
+    }
+  }, [value]);
+
+  return (
+    <div className="space-y-1">
+      <Select value={selectVal} onValueChange={handleSelectChange}>
+        <SelectTrigger className="h-8 w-28 px-2 py-1 text-xs">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {PRESET_COURSES.map((c) => (
+            <SelectItem key={c} value={c}>
+              {c}
+            </SelectItem>
+          ))}
+          <SelectItem value="__other__">Other…</SelectItem>
+        </SelectContent>
+      </Select>
+      {selectVal === "__other__" && (
+        <Input
+          value={customVal}
+          onChange={(e) => { setCustomVal(e.target.value); onChange(e.target.value); }}
+          placeholder="Type course…"
+          className="h-8 w-28 px-2 py-1 text-xs"
+          onClick={(e) => e.stopPropagation()}
+        />
+      )}
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/_app/students")({
   component: StudentsPage,
@@ -58,6 +121,8 @@ function StudentsPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [shareStudent, setShareStudent] = useState<Student | null>(null);
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [pasteText, setPasteText] = useState("");
   const pageSize = 8;
 
   const queryClient = useQueryClient();
@@ -105,12 +170,54 @@ function StudentsPage() {
     },
   });
 
+  // Listen for Ctrl+S / Cmd+S to save inline editing
+  useEffect(() => {
+    if (!editingId) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        updateMutation.mutate({
+          id: editingId,
+          data: {
+            name: editName,
+            fatherName: editFatherName,
+            mobile: editMobile,
+            address: editAddress,
+            exam: editExam,
+            course: editCourse,
+            visitDate: editVisitDate,
+            status: editStatus,
+            remarks: editRemarks,
+          },
+        });
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    editingId,
+    editName,
+    editFatherName,
+    editMobile,
+    editAddress,
+    editExam,
+    editCourse,
+    editVisitDate,
+    editStatus,
+    editRemarks,
+    updateMutation,
+  ]);
+
   const bulkUploadMutation = useMutation({
     mutationFn: (students: any[]) => studentApi.bulkCreate(students),
     onSuccess: (data) => {
       toast.success(`Successfully uploaded ${data.count} leads!`, {
         description: "The pipeline has been updated."
       });
+      setPasteOpen(false);
+      setPasteText("");
       queryClient.invalidateQueries({ queryKey: ["students"] });
       queryClient.invalidateQueries({ queryKey: ["dashboardStats"] });
       queryClient.invalidateQueries({ queryKey: ["activities"] });
@@ -170,40 +277,112 @@ function StudentsPage() {
   };
 
   const parseCSV = (text: string) => {
-    const lines = text.split(/\r?\n/);
+    // Strip UTF-8 BOM if present
+    let cleanText = text;
+    if (cleanText.startsWith("\ufeff")) {
+      cleanText = cleanText.slice(1);
+    }
+
+    const lines = cleanText.split(/\r?\n/);
     const result = [];
     if (lines.length === 0 || !lines[0].trim()) return [];
     
-    const headers = lines[0].split(",").map(h => h.trim().replace(/^["']|["']$/g, ""));
+    // Auto-detect delimiter: tab if tab exists in headers, else comma
+    const delimiter = lines[0].includes("\t") ? "\t" : ",";
     
-    for (let i = 1; i < lines.length; i++) {
-      if (!lines[i].trim()) continue;
-      
+    // Helper to parse a CSV line respecting double quotes
+    const parseLine = (line: string) => {
       const row = [];
       let insideQuote = false;
       let entry = "";
-      for (let j = 0; j < lines[i].length; j++) {
-        const char = lines[i][j];
-        if (char === '"' || char === "'") {
+      for (let j = 0; j < line.length; j++) {
+        const char = line[j];
+        if (char === '"') {
           insideQuote = !insideQuote;
-        } else if (char === "," && !insideQuote) {
-          row.push(entry.trim().replace(/^["']|["']$/g, ""));
+        } else if (char === delimiter && !insideQuote) {
+          row.push(entry.trim().replace(/^"|"$/g, "").replace(/""/g, '"'));
           entry = "";
         } else {
           entry += char;
         }
       }
-      row.push(entry.trim().replace(/^["']|["']$/g, ""));
+      row.push(entry.trim().replace(/^"|"$/g, "").replace(/""/g, '"'));
+      return row;
+    };
+
+    const headers = parseLine(lines[0]).map(h => h.toLowerCase().trim());
+    
+    for (let i = 1; i < lines.length; i++) {
+      const lineText = lines[i].trim();
+      if (!lineText) continue;
+      
+      const row = parseLine(lines[i]);
       
       if (row.length > 0) {
         const obj: any = {};
         headers.forEach((header, index) => {
-          obj[header] = row[index];
+          if (header) {
+            obj[header] = row[index];
+          }
         });
         result.push(obj);
       }
     }
     return result;
+  };
+
+  const processAndUploadLeads = (text: string) => {
+    try {
+      const rawRows = parseCSV(text);
+      if (rawRows.length === 0) {
+        toast.error("No valid data found. Check format.");
+        return;
+      }
+      
+      const studentsToUpload = rawRows.map((row) => {
+        const getVal = (aliases: string[]) => {
+          // Find key that matches any alias
+          const key = aliases.find(alias => row[alias] !== undefined);
+          return key ? row[key] : undefined;
+        };
+        
+        const rawExam = getVal(["exam", "entrance exam", "entrance_exam"]);
+        let examVal = "JEE Main";
+        if (rawExam) {
+          const rawExamStr = String(rawExam).trim().toLowerCase();
+          if (rawExamStr.includes("special") && rawExamStr.includes("ojee")) {
+            examVal = "Special OJEE";
+          } else if (rawExamStr.includes("jee")) {
+            examVal = "JEE Main";
+          } else if (rawExamStr.includes("ojee")) {
+            examVal = "OJEE";
+          } else if (rawExamStr.includes("both")) {
+            examVal = "Both";
+          }
+        }
+        
+        return {
+          name: getVal(["name", "student name", "student_name", "full name", "fullname"]),
+          mobile: getVal(["mobile", "mobile number", "mobile_number", "phone", "number", "phone number", "phone_number"]),
+          fatherName: getVal(["father name", "father's name", "father_name", "fathername"]),
+          address: getVal(["address", "city", "permanent address"]),
+          exam: examVal,
+          course: getVal(["course", "course interest", "course_interest"]),
+          status: getVal(["status", "call status", "call_status"]),
+          remarks: getVal(["remarks", "notes", "conversation notes", "remarks / conversation notes"]),
+          assignedTo: getVal(["assigned to", "assigned_to", "counselor", "assigned counselor"])
+        };
+      }).filter(s => s.name && s.mobile);
+      
+      if (studentsToUpload.length === 0) {
+        toast.error("No valid leads found. Must contain 'Name' and 'Mobile' columns.");
+        return;
+      }
+      
+      bulkUploadMutation.mutate(studentsToUpload as any);
+    } catch (err) {
+      toast.error("Failed to parse data: " + (err as any).message);
+    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -214,44 +393,7 @@ function StudentsPage() {
     reader.onload = (event) => {
       const text = event.target?.result as string;
       if (!text) return;
-      
-      try {
-        const rawRows = parseCSV(text);
-        if (rawRows.length === 0) {
-          toast.error("CSV file is empty or invalid.");
-          return;
-        }
-        
-        const studentsToUpload = rawRows.map((row) => {
-          const getVal = (aliases: string[]) => {
-            const key = Object.keys(row).find((k) => 
-              aliases.includes(k.toLowerCase().trim())
-            );
-            return key ? row[key] : undefined;
-          };
-          
-          return {
-            name: getVal(["name", "student name", "student_name", "full name", "fullname"]),
-            mobile: getVal(["mobile", "mobile number", "mobile_number", "phone", "number", "phone number", "phone_number"]),
-            fatherName: getVal(["father name", "father's name", "father_name", "fathername"]),
-            address: getVal(["address", "city", "permanent address"]),
-            exam: getVal(["exam", "entrance exam", "entrance_exam"]),
-            course: getVal(["course", "course interest", "course_interest"]),
-            status: getVal(["status", "call status", "call_status"]),
-            remarks: getVal(["remarks", "notes", "conversation notes", "remarks / conversation notes"]),
-            assignedTo: getVal(["assigned to", "assigned_to", "counselor", "assigned counselor"])
-          };
-        }).filter(s => s.name && s.mobile);
-        
-        if (studentsToUpload.length === 0) {
-          toast.error("No valid leads found. CSV must contain 'Name' and 'Mobile' columns.");
-          return;
-        }
-        
-        bulkUploadMutation.mutate(studentsToUpload as any);
-      } catch (err) {
-        toast.error("Failed to parse CSV: " + (err as any).message);
-      }
+      processAndUploadLeads(text);
     };
     reader.readAsText(file);
     e.target.value = "";
@@ -291,6 +433,13 @@ function StudentsPage() {
               onChange={handleFileUpload}
               className="hidden"
             />
+            <Button
+              variant="outline"
+              onClick={() => setPasteOpen(true)}
+              disabled={bulkUploadMutation.isPending}
+            >
+              <Clipboard className="mr-2 h-4 w-4" /> Paste & Upload
+            </Button>
             <Button onClick={() => setAddOpen(true)}>
               <Plus className="mr-2 h-4 w-4" /> Add Lead
             </Button>
@@ -457,16 +606,7 @@ function StudentsPage() {
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         {isEditing ? (
-                          <Select value={editCourse} onValueChange={setEditCourse}>
-                            <SelectTrigger className="h-8 w-28 px-2 py-1 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {COURSES.map((c) => (
-                                <SelectItem key={c} value={c}>{c}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <InlineCourseField value={editCourse} onChange={setEditCourse} />
                         ) : (
                           s.course
                         )}
@@ -561,16 +701,15 @@ function StudentsPage() {
                           ) : (
                             <>
                               <Button
+                                asChild
                                 variant="ghost"
                                 size="icon"
                                 className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10"
-                                title="Call & Update"
-                                onClick={() => {
-                                  setActiveId(s.id);
-                                  setCallOpen(true);
-                                }}
+                                title="Call Student"
                               >
-                                <Phone className="h-4 w-4" />
+                                <a href={`tel:${s.mobile.replace(/\s+/g, '')}`}>
+                                  <Phone className="h-4 w-4" />
+                                </a>
                               </Button>
                               <Button
                                 variant="ghost"
@@ -612,9 +751,7 @@ function StudentsPage() {
                                   className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                                   title="Delete Lead"
                                   onClick={() => {
-                                    if (confirm(`Are you sure you want to delete ${s.name}?`)) {
-                                      deleteMutation.mutate(s.id);
-                                    }
+                                    deleteMutation.mutate(s.id);
                                   }}
                                   disabled={deleteMutation.isPending}
                                 >
@@ -669,6 +806,45 @@ function StudentsPage() {
       <CallUpdateModal key={activeId} student={activeStudent} open={callOpen} onOpenChange={setCallOpen} />
       <StudentModal open={addOpen} onOpenChange={setAddOpen} />
       <ShareModal open={shareOpen} onOpenChange={setShareOpen} student={shareStudent} />
+
+      {/* Paste & Upload Dialog */}
+      <Dialog open={pasteOpen} onOpenChange={setPasteOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Paste CSV/Excel Data</DialogTitle>
+            <DialogDescription>
+              Copy columns from Excel or Google Sheets (must contain <strong>Name</strong> and <strong>Mobile</strong>) and paste them below. Tab-separated (TSV) and comma-separated (CSV) formats are both automatically supported.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <Textarea
+              value={pasteText}
+              onChange={(e) => setPasteText(e.target.value)}
+              placeholder="Name&#9;Mobile&#9;Father's Name&#9;Exam&#10;Ramesh Mohanty&#9;9439012345&#9;Mohan Mohanty&#9;OJEE&#10;Suresh Kumar&#9;9876543210&#9;&#9;JEE Main"
+              rows={10}
+              className="font-mono text-xs"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPasteOpen(false)} disabled={bulkUploadMutation.isPending}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (!pasteText.trim()) {
+                  toast.error("Please paste some data first.");
+                  return;
+                }
+                processAndUploadLeads(pasteText);
+              }}
+              disabled={bulkUploadMutation.isPending}
+            >
+              {bulkUploadMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Upload Leads
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

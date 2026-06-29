@@ -131,9 +131,7 @@ function StaffPage() {
   };
 
   const handleDeleteClick = (s: Staff) => {
-    if (window.confirm(`Are you sure you want to permanently delete counselor "${s.name}"?`)) {
-      deleteStaffMutation.mutate(s.id);
-    }
+    deleteStaffMutation.mutate(s.id);
   };
 
   const handleToggleStatus = (s: Staff) => {
@@ -294,6 +292,25 @@ function StaffForm({
       }
     }
   }, [open, editingStaff]);
+
+  // Listen for Ctrl+S / Cmd+S to save
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        if (!name.trim() || !email.trim() || (!editingStaff && !password.trim())) {
+          toast.error("Please fill in all required fields.");
+          return;
+        }
+        onSave({ name, email, password: password || undefined });
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, name, email, password, editingStaff, onSave]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

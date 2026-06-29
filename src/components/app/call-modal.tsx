@@ -24,7 +24,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { studentApi } from "@/lib/api";
 import { Loader2, Phone } from "lucide-react";
 
-const COURSES = [
+const PRESET_COURSES = [
   "B.Tech CSE",
   "B.Tech ECE",
   "B.Tech Mechanical",
@@ -35,15 +35,71 @@ const COURSES = [
   "BCA",
 ];
 
-const SOURCES = [
-  "Website",
-  "Walk-in",
-  "Referral",
-  "Google Ads",
-  "Facebook",
-  "Education Fair",
-  "Newspaper",
-];
+/** Hybrid course selector: preset dropdown + free-text "Other" entry */
+function CourseField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const isCustom = value !== "" && !PRESET_COURSES.includes(value);
+  const [selectVal, setSelectVal] = useState<string>(isCustom ? "__other__" : value);
+  const [customVal, setCustomVal] = useState<string>(isCustom ? value : "");
+
+  const handleSelectChange = (v: string) => {
+    setSelectVal(v);
+    if (v === "__other__") {
+      onChange(customVal);
+    } else {
+      setCustomVal("");
+      onChange(v);
+    }
+  };
+
+  const handleCustomChange = (v: string) => {
+    setCustomVal(v);
+    onChange(v);
+  };
+
+  // Sync when parent resets value
+  useEffect(() => {
+    const newIsCustom = value !== "" && !PRESET_COURSES.includes(value);
+    if (newIsCustom) {
+      setSelectVal("__other__");
+      setCustomVal(value);
+    } else {
+      setSelectVal(value);
+      setCustomVal("");
+    }
+  }, [value]);
+
+  return (
+    <div className="grid gap-2">
+      <Select value={selectVal} onValueChange={handleSelectChange}>
+        <SelectTrigger>
+          <SelectValue placeholder="Select or type course…" />
+        </SelectTrigger>
+        <SelectContent>
+          {PRESET_COURSES.map((c) => (
+            <SelectItem key={c} value={c}>
+              {c}
+            </SelectItem>
+          ))}
+          <SelectItem value="__other__">Other – type manually</SelectItem>
+        </SelectContent>
+      </Select>
+      {selectVal === "__other__" && (
+        <Input
+          value={customVal}
+          onChange={(e) => handleCustomChange(e.target.value)}
+          placeholder="e.g. M.Tech, LLB, B.Ed…"
+          autoFocus
+        />
+      )}
+    </div>
+  );
+}
 
 export function CallUpdateModal({
   student,
@@ -119,6 +175,21 @@ export function CallUpdateModal({
       exam,
     });
   };
+
+  // Listen for Ctrl+S / Cmd+S to save
+  useEffect(() => {
+    if (!open || !student) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        handleSave();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, student, status, remarks, course, visit, address, fatherName, exam, logCallMutation]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -203,17 +274,13 @@ export function CallUpdateModal({
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label>Course Interest</Label>
-              <Select value={course} onValueChange={setCourse}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {COURSES.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>
+                Course Interest{" "}
+                <span className="text-xs font-normal text-muted-foreground">
+                  (choose preset or type your own)
+                </span>
+              </Label>
+              <CourseField value={course} onChange={setCourse} />
             </div>
             <div className="grid gap-2">
               <Label>Permanent Address</Label>
