@@ -287,7 +287,7 @@ function StudentsPage() {
     const result = [];
     if (lines.length === 0 || !lines[0].trim()) return [];
     
-    // Auto-detect delimiter: tab if tab exists in headers, else comma
+    // Auto-detect delimiter: tab if tab exists in headers/first row, else comma
     const delimiter = lines[0].includes("\t") ? "\t" : ",";
     
     // Helper to parse a CSV line respecting double quotes
@@ -310,9 +310,89 @@ function StudentsPage() {
       return row;
     };
 
-    const headers = parseLine(lines[0]).map(h => h.toLowerCase().trim());
+    const firstLineFields = parseLine(lines[0]);
     
-    for (let i = 1; i < lines.length; i++) {
+    // Header keywords to check
+    const headerKeywords = [
+      "name", "student", "fullname", "full name", "student name", "student_name",
+      "mobile", "contact", "phone", "number", "mobile number", "phone number",
+      "course", "course interest", "course_interest", "branch",
+      "address", "district", "city", "permanent address", "location",
+      "exam", "entrance exam", "entrance_exam",
+      "father name", "father's name", "father_name",
+      "status", "remarks", "notes", "counselor", "assigned to"
+    ];
+
+    // Detect if first line contains actual data
+    const looksLikeData = firstLineFields.some(field => {
+      const clean = field.trim().toLowerCase();
+      // If it is a phone number (e.g. 10 digits, or starts with + and has digits)
+      if (/^\+?[\d\s-]{10,15}$/.test(clean)) return true;
+      // If it is a known course
+      if (["mca", "mba", "bca", "bba", "b.tech", "b.pharm"].includes(clean)) return true;
+      return false;
+    });
+
+    const matchesHeaderKeywords = firstLineFields.some(field => {
+      const clean = field.trim().toLowerCase();
+      return headerKeywords.some(keyword => clean === keyword || clean.includes(keyword));
+    });
+
+    const isHeaderless = looksLikeData || !matchesHeaderKeywords;
+
+    let headers: string[] = [];
+    let startIndex = 1;
+
+    if (isHeaderless) {
+      startIndex = 0; // The first line is data, so don't skip it!
+      
+      // Auto-detect index mappings
+      let nameIdx = -1;
+      let courseIdx = -1;
+      let addressIdx = -1;
+      let mobileIdx = -1;
+
+      firstLineFields.forEach((field, idx) => {
+        const clean = field.trim().toLowerCase();
+        // Check for phone number
+        if (/^\+?[\d\s-]{8,15}$/.test(clean) && !isNaN(Number(clean.replace(/[\s+-]/g, "")))) {
+          mobileIdx = idx;
+        }
+        // Check for common course names
+        else if (["mca", "mba", "bca", "bba", "b.tech", "b.pharm", "m.tech", "cse", "ece", "mechanical", "civil"].includes(clean)) {
+          courseIdx = idx;
+        }
+      });
+
+      // Default index assignments based on standard [Name, Course, Address/District, Mobile/Contact]
+      if (firstLineFields.length === 4) {
+        if (nameIdx === -1) nameIdx = 0;
+        if (courseIdx === -1) courseIdx = 1;
+        if (addressIdx === -1) addressIdx = 2;
+        if (mobileIdx === -1) mobileIdx = 3;
+      } else {
+        if (mobileIdx === -1) {
+          const found = firstLineFields.findIndex(f => /^\+?[\d\s-]{8,15}$/.test(f.trim()));
+          if (found !== -1) mobileIdx = found;
+        }
+        if (nameIdx === -1) nameIdx = 0;
+        if (courseIdx === -1) courseIdx = firstLineFields.length > 1 ? 1 : -1;
+        if (addressIdx === -1) addressIdx = firstLineFields.length > 2 ? 2 : -1;
+        if (mobileIdx === -1) mobileIdx = firstLineFields.length > 3 ? 3 : -1;
+      }
+
+      headers = firstLineFields.map((_, idx) => {
+        if (idx === nameIdx) return "student";
+        if (idx === courseIdx) return "course";
+        if (idx === addressIdx) return "district";
+        if (idx === mobileIdx) return "contact";
+        return `col_${idx}`;
+      });
+    } else {
+      headers = firstLineFields.map(h => h.toLowerCase().trim());
+    }
+    
+    for (let i = startIndex; i < lines.length; i++) {
       const lineText = lines[i].trim();
       if (!lineText) continue;
       
