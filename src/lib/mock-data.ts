@@ -7,6 +7,7 @@ export type CallStatus =
   | "Wrong Number"
   | "Busy"
   | "Visit Scheduled"
+  | "Visit Completed"
   | "Admission Confirmed"
   | "Admission Rejected";
 
@@ -19,6 +20,7 @@ export const CALL_STATUSES: CallStatus[] = [
   "Wrong Number",
   "Busy",
   "Visit Scheduled",
+  "Visit Completed",
   "Admission Confirmed",
   "Admission Rejected",
 ];
@@ -30,6 +32,8 @@ export const statusColor = (s: CallStatus): string => {
       return "bg-blue-100 text-blue-700 border-blue-200";
     case "Visit Scheduled":
       return "bg-amber-100 text-amber-700 border-amber-200";
+    case "Visit Completed":
+      return "bg-teal-100 text-teal-700 border-teal-200";
     case "Admission Confirmed":
       return "bg-emerald-100 text-emerald-700 border-emerald-200";
     case "Admission Rejected":
@@ -66,6 +70,8 @@ export interface Student {
   remarks: string;
   assignedTo: string;
   history: CallLog[];
+  isPinned?: boolean;
+  updatedAt?: string;
 }
 
 export interface Staff {

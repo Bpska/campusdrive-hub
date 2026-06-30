@@ -159,6 +159,12 @@ export const notificationApi = {
       method: "PUT",
     });
   },
+
+  delete: (id: string) => {
+    return request<{ message: string }>(`/api/notifications/${id}`, {
+      method: "DELETE",
+    });
+  },
 };
 
 // Dashboard API

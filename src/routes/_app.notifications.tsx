@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { type Notification, type Student } from "@/lib/mock-data";
-import { Bell, CalendarDays, UserPlus, RotateCcw, Loader2 } from "lucide-react";
+import { Bell, CalendarDays, UserPlus, RotateCcw, Loader2, Trash2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { notificationApi, studentApi } from "@/lib/api";
 import { toast } from "sonner";
@@ -37,6 +37,17 @@ function NotificationsPage() {
     mutationFn: (id: string) => notificationApi.markRead(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => notificationApi.delete(id),
+    onSuccess: () => {
+      toast.success("Notification deleted");
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+    onError: () => {
+      toast.error("Failed to delete notification");
     },
   });
 
@@ -99,7 +110,7 @@ function NotificationsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Notifications"
-        description={`${unreadCount} unread`}
+        description={`${unreadCount} unread · ${items.length} total`}
         actions={
           <Button
             variant="outline"
@@ -124,6 +135,7 @@ function NotificationsPage() {
           items.map((n) => {
             const Icon = iconFor(n.type);
             const hasStudent = !!n.studentId;
+            const isDeleting = deleteMutation.isPending && deleteMutation.variables === n.id;
             return (
               <Card
                 key={n.id}
@@ -152,6 +164,23 @@ function NotificationsPage() {
                     <p className="mt-1 text-sm text-muted-foreground">{n.body}</p>
                     <div className="mt-1 text-xs text-muted-foreground">{n.time}</div>
                   </div>
+
+                  {/* Delete button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteMutation.mutate(n.id);
+                    }}
+                    disabled={isDeleting}
+                    className="ml-2 shrink-0 grid h-8 w-8 place-items-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                    title="Delete notification"
+                  >
+                    {isDeleting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                  </button>
                 </CardContent>
               </Card>
             );

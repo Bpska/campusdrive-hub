@@ -60,3 +60,21 @@ export const markNotificationRead = async (req: AuthenticatedRequest, res: Respo
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+// Delete a notification
+export const deleteNotification = async (req: AuthenticatedRequest, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const checkRes = await pool.query("SELECT * FROM notifications WHERE id = $1", [id]);
+    if (checkRes.rows.length === 0) {
+      return res.status(404).json({ error: "Notification not found" });
+    }
+
+    await pool.query("DELETE FROM notifications WHERE id = $1", [id]);
+    res.json({ message: "Notification deleted" });
+  } catch (error) {
+    console.error("Delete notification error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};

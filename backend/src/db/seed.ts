@@ -133,8 +133,8 @@ async function main() {
 
     for (const s of students) {
       await pool.query(
-        "INSERT INTO students (id, name, father_name, mobile, address, exam, course, visit_date, status, remarks, assigned_to) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
-        [s.id, s.name, s.fatherName, s.mobile, s.address, s.exam, s.course, s.visitDate, s.status, s.remarks, s.assignedTo]
+        "INSERT INTO students (id, name, father_name, mobile, address, exam, course, visit_date, status, remarks, assigned_to, is_pinned, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)",
+        [s.id, s.name, s.fatherName, s.mobile, s.address, s.exam, s.course, s.visitDate, s.status, s.remarks, s.assignedTo, false, new Date()]
       );
 
       // Call logs history for this student

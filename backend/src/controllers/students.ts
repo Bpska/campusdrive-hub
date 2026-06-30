@@ -84,7 +84,7 @@ export const getStudents = async (req: AuthenticatedRequest, res: Response) => {
     const validSortKeys = ["name", "status", "course", "visit_date", "id"];
     const actualSortKey = validSortKeys.includes(sortKey) ? sortKey : "name";
     const dbSortKey = actualSortKey === "visitDate" || actualSortKey === "visit_date" ? "visit_date" : actualSortKey;
-    sql += ` ORDER BY ${dbSortKey} ASC`;
+    sql += ` ORDER BY is_pinned DESC, ${dbSortKey} ASC`;
 
     // Execute count query
     const countResult = await pool.query(`SELECT COUNT(*) FROM (${sql}) AS counted`, params);
@@ -110,6 +110,8 @@ export const getStudents = async (req: AuthenticatedRequest, res: Response) => {
       status: row.status,
       remarks: row.remarks,
       assignedTo: row.assigned_to,
+      isPinned: row.is_pinned,
+      updatedAt: row.updated_at,
     }));
 
     // Fetch unique districts for filter dropdown (capitalized and trimmed)
@@ -156,6 +158,8 @@ export const getStudentById = async (req: AuthenticatedRequest, res: Response) =
       status: row.status,
       remarks: row.remarks,
       assignedTo: row.assigned_to,
+      isPinned: row.is_pinned,
+      updatedAt: row.updated_at,
       history: logsRes.rows.map(log => ({
         id: log.id,
         date: log.date,
@@ -213,13 +217,13 @@ export const createStudent = async (req: AuthenticatedRequest, res: Response) =>
     const finalStatus = status || "Not Called";
 
     const insertSql = `
-      INSERT INTO students (id, name, father_name, mobile, address, exam, course, status, remarks, assigned_to)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      INSERT INTO students (id, name, father_name, mobile, address, exam, course, status, remarks, assigned_to, is_pinned, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *
     `;
 
     const result = await pool.query(insertSql, [
-      newId, name, finalFatherName, mobile, finalAddress, finalExam, finalCourse, finalStatus, remarks || "", finalAssignedTo
+      newId, name, finalFatherName, mobile, finalAddress, finalExam, finalCourse, finalStatus, remarks || "", finalAssignedTo, false, new Date()
     ]);
 
     // Log Activity
@@ -247,6 +251,8 @@ export const createStudent = async (req: AuthenticatedRequest, res: Response) =>
       status: row.status,
       remarks: row.remarks,
       assignedTo: row.assigned_to,
+      isPinned: row.is_pinned,
+      updatedAt: row.updated_at,
     });
   } catch (error) {
     console.error("Create student error:", error);
@@ -257,7 +263,7 @@ export const createStudent = async (req: AuthenticatedRequest, res: Response) =>
 // Update an existing student
 export const updateStudent = async (req: AuthenticatedRequest, res: Response) => {
   const { id } = req.params;
-  const { name, fatherName, mobile, address, exam, course, status, remarks, assignedTo, visitDate } = req.body;
+  const { name, fatherName, mobile, address, exam, course, status, remarks, assignedTo, visitDate, isPinned } = req.body;
 
   try {
     // Check if student exists
@@ -271,8 +277,8 @@ export const updateStudent = async (req: AuthenticatedRequest, res: Response) =>
       UPDATE students
       SET name = $1, father_name = $2, mobile = $3, address = $4,
           exam = $5, course = $6, status = $7, remarks = $8, assigned_to = $9,
-          visit_date = $10
-      WHERE id = $11
+          visit_date = $10, is_pinned = $11, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $12
       RETURNING *
     `;
 
@@ -287,6 +293,7 @@ export const updateStudent = async (req: AuthenticatedRequest, res: Response) =>
       remarks !== undefined ? remarks : oldStudent.remarks,
       assignedTo || oldStudent.assigned_to,
       visitDate !== undefined ? visitDate : oldStudent.visit_date,
+      isPinned !== undefined ? isPinned : oldStudent.is_pinned,
       id
     ]);
 
@@ -351,6 +358,8 @@ export const updateStudent = async (req: AuthenticatedRequest, res: Response) =>
       status: row.status,
       remarks: row.remarks,
       assignedTo: row.assigned_to,
+      isPinned: row.is_pinned,
+      updatedAt: row.updated_at,
     });
   } catch (error) {
     console.error("Update student error:", error);
@@ -401,7 +410,7 @@ export const logCall = async (req: AuthenticatedRequest, res: Response) => {
     await pool.query(
       `UPDATE students 
        SET status = $1, remarks = $2, course = $3, visit_date = $4, address = $5,
-           father_name = $6, exam = $7
+           father_name = $6, exam = $7, updated_at = CURRENT_TIMESTAMP
        WHERE id = $8`,
       [
         updatedStatus, 
@@ -424,6 +433,7 @@ export const logCall = async (req: AuthenticatedRequest, res: Response) => {
     // 6. Log Activity
     let action = "called";
     if (status === "Visit Scheduled") action = "scheduled visit for";
+    if (status === "Visit Completed") action = "completed campus visit for";
     if (status === "Admission Confirmed") action = "confirmed admission of";
     
     await pool.query(
@@ -719,7 +729,7 @@ export const bulkCreateStudents = async (req: AuthenticatedRequest, res: Respons
           const newId = `STU${currentMaxNum}`;
           const finalAssignedTo = assignedTo || req.user?.name || "Unassigned";
 
-          valuePlaceholders.push(`($${paramIndex}, $${paramIndex+1}, $${paramIndex+2}, $${paramIndex+3}, $${paramIndex+4}, $${paramIndex+5}, $${paramIndex+6}, $${paramIndex+7}, $${paramIndex+8}, $${paramIndex+9})`);
+          valuePlaceholders.push(`($${paramIndex}, $${paramIndex+1}, $${paramIndex+2}, $${paramIndex+3}, $${paramIndex+4}, $${paramIndex+5}, $${paramIndex+6}, $${paramIndex+7}, $${paramIndex+8}, $${paramIndex+9}, $${paramIndex+10}, $${paramIndex+11})`);
           
           values.push(
             newId,
@@ -731,10 +741,12 @@ export const bulkCreateStudents = async (req: AuthenticatedRequest, res: Respons
             course || "B.Tech CSE",
             status || "Not Called",
             remarks || "",
-            finalAssignedTo
+            finalAssignedTo,
+            false,
+            new Date()
           );
 
-          paramIndex += 10;
+          paramIndex += 12;
 
           // Track counselor assignment count
           counselorLeadsMap.set(finalAssignedTo, (counselorLeadsMap.get(finalAssignedTo) || 0) + 1);
@@ -742,9 +754,9 @@ export const bulkCreateStudents = async (req: AuthenticatedRequest, res: Respons
 
         if (values.length > 0) {
           const insertSql = `
-            INSERT INTO students (id, name, father_name, mobile, address, exam, course, status, remarks, assigned_to)
+            INSERT INTO students (id, name, father_name, mobile, address, exam, course, status, remarks, assigned_to, is_pinned, updated_at)
             VALUES ${valuePlaceholders.join(", ")}
-            RETURNING id, name, father_name as "fatherName", mobile, address, exam, course, status, remarks, assigned_to as "assignedTo"
+            RETURNING id, name, father_name as "fatherName", mobile, address, exam, course, status, remarks, assigned_to as "assignedTo", is_pinned as "isPinned", updated_at as "updatedAt"
           `;
           const result = await client.query(insertSql, values);
           inserted.push(...result.rows);

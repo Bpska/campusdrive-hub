@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CALL_STATUSES, statusColor, type Student } from "@/lib/mock-data";
-import { ChevronLeft, ChevronRight, Download, Search, Upload, Loader2, Plus, Phone, Trash2, Pencil, Check, X, Mail, Share2, Clipboard, Printer } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Search, Upload, Loader2, Plus, Phone, Trash2, Pencil, Check, X, Mail, Share2, Clipboard, Printer, Pin, CheckCircle2 } from "lucide-react";
 import { StudentDrawer } from "@/components/app/student-drawer";
 import { CallUpdateModal } from "@/components/app/call-modal";
 import { StudentModal } from "@/components/app/student-modal";
@@ -104,6 +105,13 @@ function InlineCourseField({
     </div>
   );
 }
+
+const isRecentlyUpdated = (updatedAtStr?: string) => {
+  if (!updatedAtStr) return false;
+  const updatedAt = new Date(updatedAtStr);
+  const diffMs = new Date().getTime() - updatedAt.getTime();
+  return diffMs >= 0 && diffMs < 5 * 60 * 1000; // 5 minutes
+};
 
 export const Route = createFileRoute("/_app/students")({
   component: StudentsPage,
@@ -710,13 +718,17 @@ function StudentsPage() {
               <TableBody>
                 {students.map((s) => {
                   const isEditing = s.id === editingId;
+                  const recentlyUpdated = isRecentlyUpdated(s.updatedAt);
                   return (
                     <TableRow
                       key={s.id}
-                      className={isEditing ? "bg-muted/30 hover:bg-muted/30" : "cursor-pointer"}
+                      className={cn(
+                        isEditing ? "bg-muted/30 hover:bg-muted/30" : "cursor-pointer",
+                        recentlyUpdated ? "bg-primary/5 border-l-4 border-l-primary hover:bg-primary/10 transition-all duration-300 shadow-sm" : ""
+                      )}
                       onClick={() => !isEditing && setActiveId(s.id)}
                     >
-                      <TableCell>
+                      <TableCell className={cn("transition-all duration-300", recentlyUpdated ? "py-6 text-sm" : "py-3 text-xs")}>
                         {isEditing ? (
                           <div className="space-y-1" onClick={(e) => e.stopPropagation()}>
                             <Input
@@ -728,12 +740,37 @@ function StudentsPage() {
                           </div>
                         ) : (
                           <>
-                            <div className="font-medium text-foreground">{s.name}</div>
-                            <div className="text-xs text-muted-foreground">{s.id}</div>
+                            <div className="flex items-center gap-1.5 font-medium text-foreground group">
+                              <span>{s.name}</span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  updateMutation.mutate({
+                                    id: s.id,
+                                    data: { isPinned: !s.isPinned }
+                                  });
+                                }}
+                                className={cn(
+                                  "opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-primary",
+                                  s.isPinned && "opacity-100 text-primary"
+                                )}
+                                title={s.isPinned ? "Unpin Lead" : "Pin Lead"}
+                              >
+                                <Pin className={cn("h-3.5 w-3.5", s.isPinned && "fill-primary text-primary")} />
+                              </button>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
+                              <span>{s.id}</span>
+                              {s.updatedAt && (
+                                <span className={cn("text-[10px]", recentlyUpdated ? "text-primary font-semibold animate-pulse bg-primary/10 px-1 rounded" : "text-muted-foreground/80")}>
+                                  · {recentlyUpdated ? "Updated " : "Modified "}{new Date(s.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              )}
+                            </div>
                           </>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className={cn("transition-all duration-300", recentlyUpdated ? "py-6 text-sm" : "py-3 text-xs")}>
                         {isEditing ? (
                           <Input
                             value={editFatherName}
@@ -745,7 +782,7 @@ function StudentsPage() {
                           s.fatherName
                         )}
                       </TableCell>
-                      <TableCell className="whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                      <TableCell className={cn("whitespace-nowrap transition-all duration-300", recentlyUpdated ? "py-6 text-sm" : "py-3 text-xs")} onClick={(e) => e.stopPropagation()}>
                         {isEditing ? (
                           <Input
                             value={editMobile}
@@ -758,7 +795,7 @@ function StudentsPage() {
                           </a>
                         )}
                       </TableCell>
-                      <TableCell className="max-w-[180px] truncate">
+                      <TableCell className={cn("max-w-[180px] truncate transition-all duration-300", recentlyUpdated ? "py-6 text-sm" : "py-3 text-xs")}>
                         {isEditing ? (
                           <Input
                             value={editAddress}
@@ -770,7 +807,7 @@ function StudentsPage() {
                           s.address
                         )}
                       </TableCell>
-                      <TableCell onClick={(e) => e.stopPropagation()}>
+                      <TableCell className={cn("transition-all duration-300", recentlyUpdated ? "py-6 text-sm" : "py-3 text-xs")} onClick={(e) => e.stopPropagation()}>
                         {isEditing ? (
                            <Select value={editExam} onValueChange={(v) => setEditExam(v as any)}>
                              <SelectTrigger className="h-8 w-28 px-2 py-1 text-xs">
@@ -787,14 +824,14 @@ function StudentsPage() {
                           s.exam
                         )}
                       </TableCell>
-                      <TableCell onClick={(e) => e.stopPropagation()}>
+                      <TableCell className={cn("transition-all duration-300", recentlyUpdated ? "py-6 text-sm" : "py-3 text-xs")} onClick={(e) => e.stopPropagation()}>
                         {isEditing ? (
                           <InlineCourseField value={editCourse} onChange={setEditCourse} />
                         ) : (
                           s.course
                         )}
                       </TableCell>
-                      <TableCell className="whitespace-nowrap">
+                      <TableCell className={cn("whitespace-nowrap transition-all duration-300", recentlyUpdated ? "py-6 text-sm" : "py-3 text-xs")}>
                         {isEditing ? (
                           <Input
                             type="date"
@@ -807,7 +844,7 @@ function StudentsPage() {
                           s.visitDate ?? <span className="text-muted-foreground">—</span>
                         )}
                       </TableCell>
-                      <TableCell onClick={(e) => e.stopPropagation()}>
+                      <TableCell className={cn("transition-all duration-300", recentlyUpdated ? "py-6 text-sm" : "py-3 text-xs")} onClick={(e) => e.stopPropagation()}>
                         {isEditing ? (
                           <Select value={editStatus} onValueChange={setEditStatus}>
                             <SelectTrigger className="h-8 w-32 px-2 py-1 text-xs">
@@ -825,7 +862,7 @@ function StudentsPage() {
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell className="max-w-[220px] truncate text-muted-foreground">
+                      <TableCell className={cn("max-w-[220px] truncate text-muted-foreground transition-all duration-300", recentlyUpdated ? "py-6 text-sm" : "py-3 text-xs")}>
                         {isEditing ? (
                           <Input
                             value={editRemarks}
@@ -837,7 +874,7 @@ function StudentsPage() {
                           s.remarks
                         )}
                       </TableCell>
-                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                      <TableCell className={cn("text-right transition-all duration-300", recentlyUpdated ? "py-6 text-sm" : "py-3 text-xs")} onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-end gap-1">
                           {isEditing ? (
                             <>
@@ -883,6 +920,24 @@ function StudentsPage() {
                             </>
                           ) : (
                             <>
+                              {s.status !== "Visit Completed" && s.status !== "Admission Confirmed" && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-teal-600 hover:text-teal-700 hover:bg-teal-50"
+                                  title="Visit Completed"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    updateMutation.mutate({
+                                      id: s.id,
+                                      data: { status: "Visit Completed", remarks: s.remarks || "Campus visit completed." }
+                                    });
+                                  }}
+                                  disabled={updateMutation.isPending}
+                                >
+                                  <CheckCircle2 className="h-4 w-4" />
+                                </Button>
+                              )}
                               <Button
                                 asChild
                                 variant="ghost"

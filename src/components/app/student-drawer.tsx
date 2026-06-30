@@ -9,10 +9,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { statusColor } from "@/lib/mock-data";
-import { CalendarDays, Mail, MapPin, Phone, PhoneCall, User, Loader2, Share2, Printer } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { CalendarDays, Mail, MapPin, Phone, PhoneCall, User, Loader2, Share2, Printer, CheckCircle2 } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { studentApi } from "@/lib/api";
 import { ShareModal } from "@/components/app/share-modal";
+import { toast } from "sonner";
 
 export function StudentDrawer({
   studentId,
@@ -26,10 +27,27 @@ export function StudentDrawer({
   onCall: () => void;
 }) {
   const [shareOpen, setShareOpen] = useState(false);
+  const queryClient = useQueryClient();
+
   const { data: student, isLoading } = useQuery({
     queryKey: ["student", studentId],
     queryFn: () => studentApi.get(studentId!),
     enabled: !!studentId && open,
+  });
+
+  const logCallMutation = useMutation({
+    mutationFn: (data: { status: any; remarks: string }) => studentApi.logCall(studentId!, data),
+    onSuccess: () => {
+      toast.success("Visit completed logged successfully!");
+      queryClient.invalidateQueries({ queryKey: ["students"] });
+      queryClient.invalidateQueries({ queryKey: ["student", studentId] });
+      queryClient.invalidateQueries({ queryKey: ["dashboardStats"] });
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to log visit completion");
+    }
   });
 
   if (!open) return null;
@@ -61,14 +79,29 @@ export function StudentDrawer({
                   </div>
                 </div>
               </div>
-              <div className="mt-4 flex gap-2">
-                <Button onClick={onCall} className="flex-1">
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button onClick={onCall} className="flex-1 min-w-[100px]">
                   <PhoneCall className="mr-2 h-4 w-4" /> Log call
                 </Button>
-                <Button variant="outline" onClick={() => setShareOpen(true)} className="flex-1">
+                {student.status !== "Visit Completed" && student.status !== "Admission Confirmed" && (
+                  <Button 
+                    variant="secondary" 
+                    className="flex-1 min-w-[140px] bg-teal-50 text-teal-700 hover:bg-teal-100 hover:text-teal-800 border border-teal-200"
+                    onClick={() => logCallMutation.mutate({ status: "Visit Completed", remarks: "Campus visit completed." })}
+                    disabled={logCallMutation.isPending}
+                  >
+                    {logCallMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="mr-2 h-4 w-4" />
+                    )}
+                    Visit Completed
+                  </Button>
+                )}
+                <Button variant="outline" onClick={() => setShareOpen(true)} className="flex-1 min-w-[80px]">
                   <Share2 className="mr-2 h-4 w-4" /> Share
                 </Button>
-                <Button variant="outline" onClick={() => window.print()} className="flex-1">
+                <Button variant="outline" onClick={() => window.print()} className="flex-1 min-w-[80px]">
                   <Printer className="mr-2 h-4 w-4" /> Print
                 </Button>
               </div>
