@@ -79,18 +79,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "AdmitFlow — Admission CRM" },
+      { title: "CRM Counsellor — Manage • Guide • Grow" },
       { name: "description", content: "Professional CRM for college admissions teams." },
-      { name: "author", content: "AdmitFlow" },
-      { property: "og:title", content: "AdmitFlow — Admission CRM" },
+      { name: "author", content: "CRM Counsellor" },
+      { property: "og:title", content: "CRM Counsellor — Manage • Guide • Grow" },
       { property: "og:description", content: "Professional CRM for college admissions teams." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:site", content: "@CRMCounsellor" },
       { name: "theme-color", content: "#2563eb" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
-      { name: "apple-mobile-web-app-title", content: "AdmitFlow" },
+      { name: "apple-mobile-web-app-title", content: "CRM Counsellor" },
     ],
     links: [
       {

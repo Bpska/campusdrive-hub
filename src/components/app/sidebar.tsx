@@ -42,12 +42,12 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <aside className="flex h-full w-64 flex-col border-r border-sidebar-border bg-sidebar">
       <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-5">
-        <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-primary-foreground">
-          <GraduationCap className="h-5 w-5" />
+        <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg">
+          <img src="/logo.png" alt="CRM Counsellor Logo" className="h-full w-full object-cover" />
         </div>
         <div className="min-w-0">
-          <div className="truncate text-sm font-bold text-sidebar-foreground">AdmitFlow</div>
-          <div className="truncate text-[11px] text-muted-foreground">Admission CRM</div>
+          <div className="truncate text-sm font-bold text-sidebar-foreground">CRM Counsellor</div>
+          <div className="truncate text-[11px] text-muted-foreground">Manage • Guide • Grow</div>
         </div>
       </div>
       <nav className="flex-1 space-y-0.5 overflow-y-auto p-3">

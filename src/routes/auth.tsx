@@ -51,12 +51,12 @@ function AuthPage() {
       <div className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-primary via-blue-600 to-blue-800 p-12 text-white lg:flex">
         <div className="absolute inset-0 opacity-20 [background:radial-gradient(circle_at_20%_20%,white,transparent_40%),radial-gradient(circle_at_80%_80%,white,transparent_40%)]" />
         <div className="relative flex items-center gap-3">
-          <div className="grid h-11 w-11 place-items-center rounded-xl bg-white/15 backdrop-blur">
-            <GraduationCap className="h-6 w-6" />
+          <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl bg-white/15 backdrop-blur">
+            <img src="/logo.png" alt="CRM Counsellor Logo" className="h-full w-full object-cover" />
           </div>
           <div>
-            <div className="text-lg font-bold">AdmitFlow</div>
-            <div className="text-xs text-white/70">Admission CRM Suite</div>
+            <div className="text-lg font-bold">CRM Counsellor</div>
+            <div className="text-xs text-white/70">Manage • Guide • Grow</div>
           </div>
         </div>
         <div className="relative space-y-6">
@@ -83,7 +83,7 @@ function AuthPage() {
           </ul>
         </div>
         <div className="relative text-xs text-white/60">
-          © {new Date().getFullYear()} AdmitFlow. All rights reserved.
+          © {new Date().getFullYear()} CRM Counsellor. All rights reserved.
         </div>
       </div>
 
@@ -91,12 +91,12 @@ function AuthPage() {
       <div className="flex items-center justify-center bg-background p-6 sm:p-10">
         <div className="w-full max-w-md">
           <div className="mb-8 flex items-center gap-3 lg:hidden">
-            <div className="grid h-10 w-10 place-items-center rounded-lg bg-primary text-primary-foreground">
-              <GraduationCap className="h-5 w-5" />
+            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-primary text-primary-foreground">
+              <img src="/logo.png" alt="CRM Counsellor Logo" className="h-full w-full object-cover" />
             </div>
             <div>
-              <div className="text-base font-bold">AdmitFlow</div>
-              <div className="text-xs text-muted-foreground">Admission CRM</div>
+              <div className="text-base font-bold">CRM Counsellor</div>
+              <div className="text-xs text-muted-foreground">Manage • Guide • Grow</div>
             </div>
           </div>
 

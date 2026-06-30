@@ -1,7 +1,7 @@
 {
-  "name": "AdmitFlow Admission CRM",
-  "short_name": "AdmitFlow",
-  "description": "Professional CRM for college admissions teams.",
+  "name": "CRM Counsellor",
+  "short_name": "Counsellor",
+  "description": "CRM Counsellor - Manage • Guide • Grow",
   "id": "/",
   "start_url": "/",
   "scope": "/",
