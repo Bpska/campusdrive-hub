@@ -77,6 +77,7 @@ export interface Staff {
   status: "Active" | "Inactive";
   assignedDistricts?: string;
   assignedSteps?: string;
+  assignedCourses?: string;
 }
 
 export interface Activity {

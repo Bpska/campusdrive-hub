@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { statusColor } from "@/lib/mock-data";
 import { useQuery } from "@tanstack/react-query";
 import { studentApi } from "@/lib/api";
-import { Loader2 } from "lucide-react";
+import { Loader2, Printer } from "lucide-react";
 
 export const Route = createFileRoute("/_app/my-calls")({
   component: MyCallsPage,
@@ -27,7 +27,15 @@ function MyCallsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="My calls" description="Every call you've logged, newest first." />
+      <PageHeader 
+        title="My calls" 
+        description="Every call you've logged, newest first." 
+        actions={
+          <Button variant="outline" onClick={() => window.print()}>
+            <Printer className="mr-2 h-4 w-4" /> Print History
+          </Button>
+        }
+      />
       <Card className="overflow-hidden border-border">
         {isLoading ? (
           <div className="flex py-20 items-center justify-center">

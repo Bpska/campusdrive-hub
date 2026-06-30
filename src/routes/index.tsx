@@ -46,7 +46,9 @@ function LandingPage() {
             <img src="/logo2.png" alt="CRM Counsellor Logo" className="h-full w-full object-cover" />
           </div>
           <div className="hidden sm:block">
-            <div className="text-lg font-bold leading-tight tracking-tight text-foreground">CRM Counsellor</div>
+            <div className="text-lg font-bold leading-tight tracking-tight">
+              <span className="text-black dark:text-white">CRM</span> <span className="text-blue-600">Counsellor</span>
+            </div>
             <div className="text-[10px] font-semibold uppercase tracking-wider text-primary">Manage • Guide • Grow</div>
           </div>
         </div>
@@ -62,10 +64,10 @@ function LandingPage() {
               Install App
             </Button>
           )}
-          <Button asChild variant="outline" className="font-semibold border-primary/20 hover:bg-primary/5">
+          <Button asChild variant="outline" className="font-semibold border-primary/20 hover:bg-primary/5 active:scale-95 active:bg-blue-100 active:text-blue-900 transition-all">
             <Link to="/auth" search={{ role: "admin" }}>Admin Login</Link>
           </Button>
-          <Button asChild className="gap-2 shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5">
+          <Button asChild className="gap-2 shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 active:scale-95 active:bg-blue-700">
             <Link to="/auth" search={{ role: "staff" }}>
               Staff Login <ArrowRight className="h-4 w-4" />
             </Link>
@@ -92,18 +94,18 @@ function LandingPage() {
             </p>
             
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Button asChild size="lg" variant="outline" className="h-14 px-8 text-base border-primary/20 hover:bg-primary/5 shadow-md transition-all hover:-translate-y-1">
+              <Button asChild size="lg" variant="outline" className="h-14 px-8 text-base border-primary/20 hover:bg-primary/5 shadow-md transition-all hover:-translate-y-1 active:scale-95 active:bg-blue-100 active:text-blue-900">
                 <Link to="/auth" search={{ role: "admin" }}>
                   Admin Login
                 </Link>
               </Button>
-              <Button asChild size="lg" className="h-14 px-8 text-base shadow-xl shadow-primary/25 transition-all hover:-translate-y-1 hover:shadow-primary/40">
+              <Button asChild size="lg" className="h-14 px-8 text-base shadow-xl shadow-primary/25 transition-all hover:-translate-y-1 hover:shadow-primary/40 active:scale-95 active:bg-blue-700">
                 <Link to="/auth" search={{ role: "staff" }}>
                   Staff Login <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
               {deferredPrompt && (
-                <Button size="lg" variant="ghost" className="h-14 px-8 text-base text-muted-foreground hover:text-foreground" onClick={handleInstallClick}>
+                <Button size="lg" variant="ghost" className="h-14 px-8 text-base text-muted-foreground hover:text-foreground active:scale-95 active:bg-blue-50" onClick={handleInstallClick}>
                   <Download className="mr-2 h-5 w-5 text-primary" /> Install Web App
                 </Button>
               )}

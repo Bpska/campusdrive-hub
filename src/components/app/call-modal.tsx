@@ -116,7 +116,7 @@ export function CallUpdateModal({
   const [address, setAddress] = useState("");
   const [remarks, setRemarks] = useState("");
   const [fatherName, setFatherName] = useState("");
-  const [exam, setExam] = useState<"JEE Main" | "OJEE" | "Special OJEE" | "Both">("JEE Main");
+  const [exam, setExam] = useState<"JEE Main" | "OJEE" | "Special OJEE" | "Both">("Special OJEE");
 
   const queryClient = useQueryClient();
 
@@ -129,7 +129,7 @@ export function CallUpdateModal({
       setAddress(student.address || "");
       setRemarks("");
       setFatherName(student.fatherName || "");
-      setExam(student.exam || "JEE Main");
+      setExam(student.exam || "Special OJEE");
     }
   }, [student, open]);
 
@@ -148,6 +148,19 @@ export function CallUpdateModal({
     onSuccess: (data) => {
       toast.success("Call logged and details updated", { description: `${student?.name} marked as ${data.status}.` });
       
+      if (student) {
+        localStorage.setItem(
+          "lastCalledStudent",
+          JSON.stringify({
+            id: student.id,
+            name: student.name,
+            mobile: student.mobile,
+            time: new Date().toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }),
+          })
+        );
+        window.dispatchEvent(new Event("storage"));
+      }
+
       // Invalidate relevant queries to fetch fresh data
       queryClient.invalidateQueries({ queryKey: ["students"] });
       queryClient.invalidateQueries({ queryKey: ["student", student?.id] });

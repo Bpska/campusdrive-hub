@@ -46,6 +46,25 @@ const runMigrations = async () => {
   try {
     await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS assigned_districts TEXT DEFAULT ''");
     await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS assigned_steps TEXT DEFAULT ''");
+    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS assigned_courses TEXT DEFAULT ''");
+    await pool.query("DELETE FROM notifications WHERE id IN ('N1', 'N2', 'N3', 'N4', 'N5')");
+    
+    // Auto-detect and fix past data exam types from remarks column
+    await pool.query(`
+      UPDATE students 
+      SET exam = 'Special OJEE' 
+      WHERE (exam = 'JEE Main' OR exam IS NULL) 
+        AND (LOWER(remarks) LIKE '%special ojee%' OR LOWER(remarks) LIKE '%spl ojee%' OR LOWER(remarks) LIKE '%special%')
+    `);
+    await pool.query(`
+      UPDATE students 
+      SET exam = 'OJEE' 
+      WHERE (exam = 'JEE Main' OR exam IS NULL) 
+        AND LOWER(remarks) LIKE '%ojee%' 
+        AND LOWER(remarks) NOT LIKE '%special%' 
+        AND LOWER(remarks) NOT LIKE '%spl%'
+    `);
+
     console.log("Database migrations applied successfully");
   } catch (err) {
     console.error("Migration error:", err);

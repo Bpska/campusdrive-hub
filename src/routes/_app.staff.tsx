@@ -30,6 +30,17 @@ import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { staffApi } from "@/lib/api";
 
+const PRESET_COURSES = [
+  "B.Tech CSE",
+  "B.Tech ECE",
+  "B.Tech Mechanical",
+  "B.Tech Civil",
+  "BBA",
+  "MBA",
+  "B.Pharm",
+  "BCA",
+];
+
 export const Route = createFileRoute("/_app/staff")({
   component: StaffPage,
 });
@@ -107,7 +118,7 @@ function StaffPage() {
 
   if (user?.role !== "admin") return <Navigate to="/dashboard" replace />;
 
-  const handleSave = (staffData: { name: string; email: string; password?: string; assignedDistricts?: string; assignedSteps?: string }) => {
+  const handleSave = (staffData: { name: string; email: string; password?: string; assignedDistricts?: string; assignedSteps?: string; assignedCourses?: string }) => {
     if (editingStaff) {
       updateStaffMutation.mutate({
         id: editingStaff.id,
@@ -168,6 +179,7 @@ function StaffPage() {
                 <TableHead>Email</TableHead>
                 <TableHead>Assigned Districts</TableHead>
                 <TableHead>Assigned Steps</TableHead>
+                <TableHead>Assigned Courses</TableHead>
                 <TableHead>Assigned leads</TableHead>
                 <TableHead>Calls made</TableHead>
                 <TableHead>Status</TableHead>
@@ -207,6 +219,15 @@ function StaffPage() {
                       </span>
                     ) : (
                       <span className="text-xs text-muted-foreground italic">All Steps</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {s.assignedCourses ? (
+                      <span className="text-xs font-semibold bg-emerald-50 text-emerald-700 px-2 py-1 rounded border border-emerald-100 block max-w-[150px] truncate" title={s.assignedCourses}>
+                        {s.assignedCourses}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground italic">All Courses</span>
                     )}
                   </TableCell>
                   <TableCell>{s.assignedLeads}</TableCell>
@@ -291,7 +312,7 @@ function StaffForm({
 }: {
   open: boolean;
   onOpenChange: (b: boolean) => void;
-  onSave: (s: { name: string; email: string; password?: string; assignedDistricts?: string; assignedSteps?: string }) => void;
+  onSave: (s: { name: string; email: string; password?: string; assignedDistricts?: string; assignedSteps?: string; assignedCourses?: string }) => void;
   isPending: boolean;
   editingStaff?: Staff | null;
 }) {
@@ -300,6 +321,7 @@ function StaffForm({
   const [password, setPassword] = useState("");
   const [assignedDistricts, setAssignedDistricts] = useState("");
   const [selectedSteps, setSelectedSteps] = useState<string[]>([]);
+  const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
 
   // Reset/populate state when opening
   useEffect(() => {
@@ -314,12 +336,18 @@ function StaffForm({
             ? editingStaff.assignedSteps.split(",").map((s) => s.trim()).filter(Boolean)
             : []
         );
+        setSelectedCourses(
+          editingStaff.assignedCourses
+            ? editingStaff.assignedCourses.split(",").map((s) => s.trim()).filter(Boolean)
+            : []
+        );
       } else {
         setName("");
         setEmail("");
         setPassword("");
         setAssignedDistricts("");
         setSelectedSteps([]);
+        setSelectedCourses([]);
       }
     }
   }, [open, editingStaff]);
@@ -327,6 +355,12 @@ function StaffForm({
   const handleStepToggle = (step: string) => {
     setSelectedSteps((prev) =>
       prev.includes(step) ? prev.filter((s) => s !== step) : [...prev, step]
+    );
+  };
+
+  const handleCourseToggle = (course: string) => {
+    setSelectedCourses((prev) =>
+      prev.includes(course) ? prev.filter((c) => c !== course) : [...prev, course]
     );
   };
 
@@ -347,13 +381,14 @@ function StaffForm({
           password: password || undefined,
           assignedDistricts: assignedDistricts.trim(),
           assignedSteps: selectedSteps.join(","),
+          assignedCourses: selectedCourses.join(","),
         });
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, name, email, password, assignedDistricts, selectedSteps, editingStaff, onSave]);
+  }, [open, name, email, password, assignedDistricts, selectedSteps, selectedCourses, editingStaff, onSave]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -411,6 +446,23 @@ function StaffForm({
               Select specific lead statuses this staff can see. Uncheck all to allow access to all statuses.
             </span>
           </div>
+          <div className="grid gap-2 border-t pt-3">
+            <Label className="font-semibold text-foreground">Assigned Courses</Label>
+            <div className="grid grid-cols-2 gap-2 max-h-[150px] overflow-y-auto border rounded-md p-2 bg-muted/20">
+              {PRESET_COURSES.map((course) => (
+                <label key={course} className="flex items-center gap-2 text-xs font-medium cursor-pointer py-1 px-1.5 rounded hover:bg-muted">
+                  <Checkbox
+                    checked={selectedCourses.includes(course)}
+                    onCheckedChange={() => handleCourseToggle(course)}
+                  />
+                  <span>{course}</span>
+                </label>
+              ))}
+            </div>
+            <span className="text-[11px] text-muted-foreground">
+              Select specific courses this staff can manage. Uncheck all to allow access to all courses.
+            </span>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>Cancel</Button>
@@ -422,6 +474,7 @@ function StaffForm({
                 password: password || undefined,
                 assignedDistricts: assignedDistricts.trim(),
                 assignedSteps: selectedSteps.join(","),
+                assignedCourses: selectedCourses.join(","),
               })
             }
             disabled={isPending}

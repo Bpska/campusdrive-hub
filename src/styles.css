@@ -142,3 +142,41 @@
     color: var(--color-foreground);
   }
 }
+
+@media print {
+  header,
+  footer,
+  aside,
+  nav,
+  button,
+  .print\:hidden,
+  .sidebar,
+  .bottom-nav,
+  [role="dialog"],
+  input,
+  select,
+  .actions-cell,
+  th:last-child,
+  td:last-child {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 11pt !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+  }
+}

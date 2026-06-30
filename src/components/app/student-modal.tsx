@@ -108,7 +108,7 @@ export function StudentModal({
 
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
-  const [exam, setExam] = useState<"JEE Main" | "OJEE" | "Special OJEE" | "Both">("OJEE");
+  const [exam, setExam] = useState<"JEE Main" | "OJEE" | "Special OJEE" | "Both">("Special OJEE");
   const [course, setCourse] = useState("");
 
   // Reset fields on open
@@ -116,7 +116,7 @@ export function StudentModal({
     if (open) {
       setName("");
       setMobile("");
-      setExam("OJEE");
+      setExam("Special OJEE");
       setCourse("");
     }
   }, [open]);

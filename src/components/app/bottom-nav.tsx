@@ -11,14 +11,14 @@ export function BottomNav() {
     user?.role === "admin"
       ? [
           { to: "/dashboard", label: "Home", icon: LayoutDashboard },
-          { to: "/students", label: "Students", icon: Users },
+          { to: "/students", label: "Lead", icon: Users },
           { to: "/visits", label: "Visits", icon: CalendarDays },
           { to: "/reports", label: "Reports", icon: BarChart3 },
           { to: "/notifications", label: "Alerts", icon: Bell },
         ]
       : [
           { to: "/dashboard", label: "Home", icon: LayoutDashboard },
-          { to: "/students", label: "Students", icon: Users },
+          { to: "/students", label: "Lead", icon: Users },
           { to: "/my-calls", label: "Calls", icon: PhoneCall },
           { to: "/visits", label: "Visits", icon: CalendarDays },
           { to: "/notifications", label: "Alerts", icon: Bell },

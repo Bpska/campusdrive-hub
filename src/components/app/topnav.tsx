@@ -65,6 +65,10 @@ export function TopNav({ onMenu }: { onMenu: () => void }) {
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input placeholder="Search students, staff, leads…" className="pl-9" />
       </div>
+      <div className="flex items-center gap-2 md:hidden">
+        <img src="/logo2.png" alt="CRM Counsellor Logo" className="h-7 w-7 object-cover rounded-lg" />
+        <span className="text-xs font-bold text-foreground truncate max-w-[120px]">CRM Counsellor</span>
+      </div>
       <div className="flex-1 md:hidden" />
       {deferredPrompt && (
         <Button

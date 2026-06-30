@@ -21,11 +21,11 @@ export const getStudents = async (req: AuthenticatedRequest, res: Response) => {
     // Enforce role-based district/step constraints for staff members
     if (req.user?.role === "staff") {
       const userRes = await pool.query(
-        "SELECT assigned_districts, assigned_steps FROM users WHERE id = $1",
+        "SELECT assigned_districts, assigned_steps, assigned_courses FROM users WHERE id = $1",
         [req.user.id]
       );
       if (userRes.rows.length > 0) {
-        const { assigned_districts, assigned_steps } = userRes.rows[0];
+        const { assigned_districts, assigned_steps, assigned_courses } = userRes.rows[0];
         
         if (assigned_districts && assigned_districts.trim() !== "") {
           const dists = assigned_districts.split(",").map((d: string) => d.trim().toLowerCase()).filter(Boolean);
@@ -41,6 +41,15 @@ export const getStudents = async (req: AuthenticatedRequest, res: Response) => {
           if (steps.length > 0) {
             sql += ` AND status = ANY($${paramIndex})`;
             params.push(steps);
+            paramIndex++;
+          }
+        }
+
+        if (assigned_courses && assigned_courses.trim() !== "") {
+          const courses = assigned_courses.split(",").map((c: string) => c.trim()).filter(Boolean);
+          if (courses.length > 0) {
+            sql += ` AND course = ANY($${paramIndex})`;
+            params.push(courses);
             paramIndex++;
           }
         }
@@ -165,13 +174,13 @@ export const getStudentById = async (req: AuthenticatedRequest, res: Response) =
 
 // Normalize exam value to fit database CHECK constraints
 const normalizeExam = (exam: string | undefined | null): "JEE Main" | "OJEE" | "Special OJEE" | "Both" => {
-  if (!exam) return "JEE Main";
+  if (!exam) return "Special OJEE";
   const str = String(exam).trim().toLowerCase();
-  if (str.includes("special") && str.includes("ojee")) return "Special OJEE";
+  if (str.includes("special") || str.includes("spl")) return "Special OJEE";
   if (str.includes("jee")) return "JEE Main";
   if (str.includes("ojee")) return "OJEE";
   if (str.includes("both")) return "Both";
-  return "JEE Main"; // fallback default
+  return "Special OJEE"; // fallback default
 };
 
 // Create a new student lead
@@ -284,6 +293,27 @@ export const updateStudent = async (req: AuthenticatedRequest, res: Response) =>
       await pool.query(
         "INSERT INTO activities (actor, action, target) VALUES ($1, $2, $3)",
         [actorName, "updated details of", name || oldStudent.name]
+      );
+    }
+
+    // Handle notification for scheduled visit
+    const newStatus = status || oldStudent.status;
+    const newVisitDate = visitDate !== undefined ? visitDate : oldStudent.visit_date;
+    const isStatusChanged = status && status !== oldStudent.status;
+    const isVisitDateChanged = visitDate !== undefined && visitDate !== oldStudent.visit_date;
+
+    if (newStatus === "Visit Scheduled" && newVisitDate && (isStatusChanged || isVisitDateChanged)) {
+      const notifId = `N_VISIT_${Date.now()}`;
+      await pool.query(
+        "INSERT INTO notifications (id, type, title, body, time, read) VALUES ($1, $2, $3, $4, $5, $6)",
+        [
+          notifId,
+          "Visit Reminder",
+          "Campus visit scheduled",
+          `${name || oldStudent.name} is scheduled to visit on ${newVisitDate}.`,
+          "Just now",
+          false
+        ]
       );
     }
 
@@ -461,11 +491,11 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
 
     if (req.user?.role === "staff") {
       const userRes = await pool.query(
-        "SELECT assigned_districts, assigned_steps FROM users WHERE id = $1",
+        "SELECT assigned_districts, assigned_steps, assigned_courses FROM users WHERE id = $1",
         [req.user.id]
       );
       if (userRes.rows.length > 0) {
-        const { assigned_districts, assigned_steps } = userRes.rows[0];
+        const { assigned_districts, assigned_steps, assigned_courses } = userRes.rows[0];
         
         if (assigned_districts && assigned_districts.trim() !== "") {
           const dists = assigned_districts.split(",").map((d: string) => d.trim().toLowerCase()).filter(Boolean);
@@ -483,6 +513,16 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
             userFilterSql += ` AND status = ANY($${filterParamIndex})`;
             joinFilterSql += ` AND s.status = ANY($${filterParamIndex})`;
             filterParams.push(steps);
+            filterParamIndex++;
+          }
+        }
+
+        if (assigned_courses && assigned_courses.trim() !== "") {
+          const courses = assigned_courses.split(",").map((c: string) => c.trim()).filter(Boolean);
+          if (courses.length > 0) {
+            userFilterSql += ` AND course = ANY($${filterParamIndex})`;
+            joinFilterSql += ` AND s.course = ANY($${filterParamIndex})`;
+            filterParams.push(courses);
             filterParamIndex++;
           }
         }

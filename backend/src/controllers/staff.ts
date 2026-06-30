@@ -10,7 +10,8 @@ export const getStaff = async (req: AuthenticatedRequest, res: Response) => {
       `SELECT id, name, email, assigned_leads as "assignedLeads", 
               calls_made as "callsMade", status,
               assigned_districts as "assignedDistricts",
-              assigned_steps as "assignedSteps"
+              assigned_steps as "assignedSteps",
+              assigned_courses as "assignedCourses"
        FROM users 
        WHERE role = 'staff' 
        ORDER BY name ASC`
@@ -24,7 +25,7 @@ export const getStaff = async (req: AuthenticatedRequest, res: Response) => {
 
 // Create a new staff member
 export const createStaff = async (req: AuthenticatedRequest, res: Response) => {
-  const { name, email, password, assignedDistricts, assignedSteps } = req.body;
+  const { name, email, password, assignedDistricts, assignedSteps, assignedCourses } = req.body;
 
   if (!name || !email || !password) {
     return res.status(400).json({ error: "Name, email, and password are required" });
@@ -39,14 +40,14 @@ export const createStaff = async (req: AuthenticatedRequest, res: Response) => {
     const passwordHash = bcrypt.hashSync(password, 10);
 
     const insertSql = `
-      INSERT INTO users (id, name, email, password, role, status, assigned_leads, calls_made, assigned_districts, assigned_steps)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      INSERT INTO users (id, name, email, password, role, status, assigned_leads, calls_made, assigned_districts, assigned_steps, assigned_courses)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING id, name, email, assigned_leads as "assignedLeads", calls_made as "callsMade", status,
-                assigned_districts as "assignedDistricts", assigned_steps as "assignedSteps"
+                assigned_districts as "assignedDistricts", assigned_steps as "assignedSteps", assigned_courses as "assignedCourses"
     `;
 
     const result = await pool.query(insertSql, [
-      newId, name, email.trim().toLowerCase(), passwordHash, "staff", "Active", 0, 0, assignedDistricts || "", assignedSteps || ""
+      newId, name, email.trim().toLowerCase(), passwordHash, "staff", "Active", 0, 0, assignedDistricts || "", assignedSteps || "", assignedCourses || ""
     ]);
 
     // Log Activity
@@ -104,7 +105,7 @@ export const updateStaffStatus = async (req: AuthenticatedRequest, res: Response
 // Update staff member details
 export const updateStaff = async (req: AuthenticatedRequest, res: Response) => {
   const { id } = req.params;
-  const { name, email, password, assignedDistricts, assignedSteps } = req.body;
+  const { name, email, password, assignedDistricts, assignedSteps, assignedCourses } = req.body;
 
   try {
     const checkRes = await pool.query("SELECT * FROM users WHERE id = $1 AND role = 'staff'", [id]);
@@ -115,26 +116,27 @@ export const updateStaff = async (req: AuthenticatedRequest, res: Response) => {
 
     let updateSql = `
       UPDATE users 
-      SET name = $1, email = $2, assigned_districts = $3, assigned_steps = $4
+      SET name = $1, email = $2, assigned_districts = $3, assigned_steps = $4, assigned_courses = $5
     `;
     const params = [
       name || oldStaff.name,
       (email || oldStaff.email).trim().toLowerCase(),
       assignedDistricts !== undefined ? assignedDistricts : oldStaff.assigned_districts,
-      assignedSteps !== undefined ? assignedSteps : oldStaff.assigned_steps
+      assignedSteps !== undefined ? assignedSteps : oldStaff.assigned_steps,
+      assignedCourses !== undefined ? assignedCourses : oldStaff.assigned_courses
     ];
 
     if (password) {
       const passwordHash = bcrypt.hashSync(password, 10);
-      updateSql += `, password = $5 WHERE id = $6`;
+      updateSql += `, password = $6 WHERE id = $7`;
       params.push(passwordHash, id);
     } else {
-      updateSql += ` WHERE id = $5`;
+      updateSql += ` WHERE id = $6`;
       params.push(id);
     }
 
     updateSql += ` RETURNING id, name, email, assigned_leads as "assignedLeads", calls_made as "callsMade", status,
-                            assigned_districts as "assignedDistricts", assigned_steps as "assignedSteps"`;
+                            assigned_districts as "assignedDistricts", assigned_steps as "assignedSteps", assigned_courses as "assignedCourses"`;
 
     const result = await pool.query(updateSql, params);
 

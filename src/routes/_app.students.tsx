@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CALL_STATUSES, statusColor, type Student } from "@/lib/mock-data";
-import { ChevronLeft, ChevronRight, Download, Search, Upload, Loader2, Plus, Phone, Trash2, Pencil, Check, X, Mail, Share2, Clipboard } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Search, Upload, Loader2, Plus, Phone, Trash2, Pencil, Check, X, Mail, Share2, Clipboard, Printer } from "lucide-react";
 import { StudentDrawer } from "@/components/app/student-drawer";
 import { CallUpdateModal } from "@/components/app/call-modal";
 import { StudentModal } from "@/components/app/student-modal";
@@ -127,6 +127,24 @@ function StudentsPage() {
   const [deleteAllOpen, setDeleteAllOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const pageSize = 8;
+  const [lastCalled, setLastCalled] = useState<{ id: string; name: string; mobile: string; time: string } | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("lastCalledStudent");
+    if (stored) {
+      setLastCalled(JSON.parse(stored));
+    }
+    const handleStorage = () => {
+      const updated = localStorage.getItem("lastCalledStudent");
+      if (updated) {
+        setLastCalled(JSON.parse(updated));
+      } else {
+        setLastCalled(null);
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
 
   const queryClient = useQueryClient();
 
@@ -168,7 +186,7 @@ function StudentsPage() {
   const [editFatherName, setEditFatherName] = useState("");
   const [editMobile, setEditMobile] = useState("");
   const [editAddress, setEditAddress] = useState("");
-  const [editExam, setEditExam] = useState<"JEE Main" | "OJEE" | "Special OJEE" | "Both">("JEE Main");
+  const [editExam, setEditExam] = useState<"JEE Main" | "OJEE" | "Special OJEE" | "Both">("Special OJEE");
   const [editCourse, setEditCourse] = useState("");
   const [editVisitDate, setEditVisitDate] = useState<string | null>(null);
   const [editStatus, setEditStatus] = useState<any>("Not Called");
@@ -445,10 +463,10 @@ function StudentsPage() {
         };
         
         const rawExam = getVal(["exam", "entrance exam", "entrance_exam"]);
-        let examVal = "JEE Main";
+        let examVal = "Special OJEE";
         if (rawExam) {
           const rawExamStr = String(rawExam).trim().toLowerCase();
-          if (rawExamStr.includes("special") && rawExamStr.includes("ojee")) {
+          if (rawExamStr.includes("special") || rawExamStr.includes("spl")) {
             examVal = "Special OJEE";
           } else if (rawExamStr.includes("jee")) {
             examVal = "JEE Main";
@@ -510,6 +528,9 @@ function StudentsPage() {
         description={`${total} leads in your pipeline.`}
         actions={
           <>
+            <Button variant="outline" onClick={() => window.print()}>
+              <Printer className="mr-2 h-4 w-4" /> Print Leads
+            </Button>
             <Button variant="outline" onClick={handleExport}>
               <Download className="mr-2 h-4 w-4" /> Export
             </Button>
@@ -549,6 +570,33 @@ function StudentsPage() {
           </>
         }
       />
+
+      {lastCalled && (
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 text-foreground px-4 py-3 rounded-lg text-sm font-medium print:hidden shadow-sm transition-all duration-200">
+          <div className="flex items-center gap-3">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
+            </span>
+            <span className="text-muted-foreground">
+              Last Called Lead: <strong className="text-foreground">{lastCalled.name}</strong> <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded border border-border">{lastCalled.mobile}</span> <span className="text-xs">at {lastCalled.time}</span>
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="h-8 border-primary/20 text-primary hover:bg-primary/10 hover:text-primary font-semibold" asChild>
+              <a href={`tel:${lastCalled.mobile.replace(/\s+/g, '')}`}>
+                <Phone className="h-3.5 w-3.5 mr-1" /> Call Again
+              </a>
+            </Button>
+            <Button variant="ghost" size="sm" className="h-8 text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => {
+              localStorage.removeItem("lastCalledStudent");
+              setLastCalled(null);
+            }}>
+              Dismiss
+            </Button>
+          </div>
+        </div>
+      )}
 
       <Card className="border-border p-4">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_auto_auto_auto_auto]">

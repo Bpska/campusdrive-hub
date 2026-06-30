@@ -9,7 +9,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { statusColor } from "@/lib/mock-data";
-import { CalendarDays, Mail, MapPin, Phone, PhoneCall, User, Loader2, Share2 } from "lucide-react";
+import { CalendarDays, Mail, MapPin, Phone, PhoneCall, User, Loader2, Share2, Printer } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { studentApi } from "@/lib/api";
 import { ShareModal } from "@/components/app/share-modal";
@@ -66,7 +66,10 @@ export function StudentDrawer({
                   <PhoneCall className="mr-2 h-4 w-4" /> Log call
                 </Button>
                 <Button variant="outline" onClick={() => setShareOpen(true)} className="flex-1">
-                  <Share2 className="mr-2 h-4 w-4" /> Share details
+                  <Share2 className="mr-2 h-4 w-4" /> Share
+                </Button>
+                <Button variant="outline" onClick={() => window.print()} className="flex-1">
+                  <Printer className="mr-2 h-4 w-4" /> Print
                 </Button>
               </div>
             </SheetHeader>
