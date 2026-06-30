@@ -36,9 +36,27 @@ app.use("/api/activities", activitiesRoutes);
 app.use("/api/notifications", notificationsRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 
+import pool from "./config/db";
+
 // Global Error Handler
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`Server is running in ${process.env.NODE_ENV || "development"} mode on port ${PORT}`);
-});
+// Database migrations
+const runMigrations = async () => {
+  try {
+    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS assigned_districts TEXT DEFAULT ''");
+    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS assigned_steps TEXT DEFAULT ''");
+    console.log("Database migrations applied successfully");
+  } catch (err) {
+    console.error("Migration error:", err);
+  }
+};
+
+const startServer = async () => {
+  await runMigrations();
+  app.listen(PORT, () => {
+    console.log(`Server is running in ${process.env.NODE_ENV || "development"} mode on port ${PORT}`);
+  });
+};
+
+startServer();

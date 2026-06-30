@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 
 const ADMIN_ITEMS = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/students", label: "Students", icon: Users },
+  { to: "/students", label: "Lead / Consultant", icon: Users },
   { to: "/staff", label: "Staff Management", icon: UserCog },
   { to: "/activity", label: "Activity Logs", icon: Activity },
   { to: "/visits", label: "Visit Schedule", icon: CalendarDays },
@@ -28,7 +28,7 @@ const ADMIN_ITEMS = [
 
 const STAFF_ITEMS = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/students", label: "Students", icon: Users },
+  { to: "/students", label: "Lead / Consultant", icon: Users },
   { to: "/my-calls", label: "My Calls", icon: PhoneCall },
   { to: "/visits", label: "Visit Schedule", icon: CalendarDays },
   { to: "/notifications", label: "Notifications", icon: Bell },
@@ -43,7 +43,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
     <aside className="flex h-full w-64 flex-col border-r border-sidebar-border bg-sidebar">
       <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-5">
         <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg">
-          <img src="/logo.png" alt="CRM Counsellor Logo" className="h-full w-full object-cover" />
+          <img src="/logo2.png" alt="CRM Counsellor Logo" className="h-full w-full object-cover" />
         </div>
         <div className="min-w-0">
           <div className="truncate text-sm font-bold text-sidebar-foreground">CRM Counsellor</div>

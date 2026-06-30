@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { type Staff } from "@/lib/mock-data";
+import { type Staff, CALL_STATUSES } from "@/lib/mock-data";
 import { useAuth } from "@/lib/auth";
 import { Plus, ToggleLeft, ToggleRight, Loader2, Pencil, Trash2 } from "lucide-react";
 import {
@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { staffApi } from "@/lib/api";
@@ -106,7 +107,7 @@ function StaffPage() {
 
   if (user?.role !== "admin") return <Navigate to="/dashboard" replace />;
 
-  const handleSave = (staffData: { name: string; email: string; password?: string }) => {
+  const handleSave = (staffData: { name: string; email: string; password?: string; assignedDistricts?: string; assignedSteps?: string }) => {
     if (editingStaff) {
       updateStaffMutation.mutate({
         id: editingStaff.id,
@@ -165,6 +166,8 @@ function StaffPage() {
               <TableRow className="bg-muted/40">
                 <TableHead>Staff</TableHead>
                 <TableHead>Email</TableHead>
+                <TableHead>Assigned Districts</TableHead>
+                <TableHead>Assigned Steps</TableHead>
                 <TableHead>Assigned leads</TableHead>
                 <TableHead>Calls made</TableHead>
                 <TableHead>Status</TableHead>
@@ -188,6 +191,24 @@ function StaffPage() {
                     </div>
                   </TableCell>
                   <TableCell>{s.email}</TableCell>
+                  <TableCell>
+                    {s.assignedDistricts ? (
+                      <span className="text-xs font-semibold bg-blue-50 text-blue-700 px-2 py-1 rounded border border-blue-100 block max-w-[150px] truncate" title={s.assignedDistricts}>
+                        {s.assignedDistricts}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground italic">All Districts</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {s.assignedSteps ? (
+                      <span className="text-xs font-semibold bg-violet-50 text-violet-700 px-2 py-1 rounded border border-violet-100 block max-w-[150px] truncate" title={s.assignedSteps}>
+                        {s.assignedSteps}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground italic">All Steps</span>
+                    )}
+                  </TableCell>
                   <TableCell>{s.assignedLeads}</TableCell>
                   <TableCell>{s.callsMade}</TableCell>
                   <TableCell>
@@ -270,13 +291,15 @@ function StaffForm({
 }: {
   open: boolean;
   onOpenChange: (b: boolean) => void;
-  onSave: (s: { name: string; email: string; password?: string }) => void;
+  onSave: (s: { name: string; email: string; password?: string; assignedDistricts?: string; assignedSteps?: string }) => void;
   isPending: boolean;
   editingStaff?: Staff | null;
 }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [assignedDistricts, setAssignedDistricts] = useState("");
+  const [selectedSteps, setSelectedSteps] = useState<string[]>([]);
 
   // Reset/populate state when opening
   useEffect(() => {
@@ -285,13 +308,27 @@ function StaffForm({
         setName(editingStaff.name);
         setEmail(editingStaff.email);
         setPassword("");
+        setAssignedDistricts(editingStaff.assignedDistricts || "");
+        setSelectedSteps(
+          editingStaff.assignedSteps
+            ? editingStaff.assignedSteps.split(",").map((s) => s.trim()).filter(Boolean)
+            : []
+        );
       } else {
         setName("");
         setEmail("");
         setPassword("");
+        setAssignedDistricts("");
+        setSelectedSteps([]);
       }
     }
   }, [open, editingStaff]);
+
+  const handleStepToggle = (step: string) => {
+    setSelectedSteps((prev) =>
+      prev.includes(step) ? prev.filter((s) => s !== step) : [...prev, step]
+    );
+  };
 
   // Listen for Ctrl+S / Cmd+S to save
   useEffect(() => {
@@ -304,17 +341,23 @@ function StaffForm({
           toast.error("Please fill in all required fields.");
           return;
         }
-        onSave({ name, email, password: password || undefined });
+        onSave({
+          name,
+          email,
+          password: password || undefined,
+          assignedDistricts: assignedDistricts.trim(),
+          assignedSteps: selectedSteps.join(","),
+        });
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, name, email, password, editingStaff, onSave]);
+  }, [open, name, email, password, assignedDistricts, selectedSteps, editingStaff, onSave]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{editingStaff ? "Edit staff counselor" : "Add staff counselor"}</DialogTitle>
         </DialogHeader>
@@ -340,11 +383,47 @@ function StaffForm({
               required={!editingStaff}
             />
           </div>
+          <div className="grid gap-2 border-t pt-3">
+            <Label className="font-semibold text-foreground">Assigned Districts</Label>
+            <Input
+              value={assignedDistricts}
+              onChange={(e) => setAssignedDistricts(e.target.value)}
+              placeholder="e.g. Cuttack, Bhubaneswar (comma-separated, blank = all)"
+            />
+            <span className="text-[11px] text-muted-foreground">
+              Enter specific districts this staff can view. Leave empty to allow access to all districts.
+            </span>
+          </div>
+          <div className="grid gap-2 border-t pt-3">
+            <Label className="font-semibold text-foreground">Assigned Funnel Steps</Label>
+            <div className="grid grid-cols-2 gap-2 max-h-[150px] overflow-y-auto border rounded-md p-2 bg-muted/20">
+              {CALL_STATUSES.map((status) => (
+                <label key={status} className="flex items-center gap-2 text-xs font-medium cursor-pointer py-1 px-1.5 rounded hover:bg-muted">
+                  <Checkbox
+                    checked={selectedSteps.includes(status)}
+                    onCheckedChange={() => handleStepToggle(status)}
+                  />
+                  <span>{status}</span>
+                </label>
+              ))}
+            </div>
+            <span className="text-[11px] text-muted-foreground">
+              Select specific lead statuses this staff can see. Uncheck all to allow access to all statuses.
+            </span>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>Cancel</Button>
           <Button
-            onClick={() => onSave({ name, email, password: password || undefined })}
+            onClick={() =>
+              onSave({
+                name,
+                email,
+                password: password || undefined,
+                assignedDistricts: assignedDistricts.trim(),
+                assignedSteps: selectedSteps.join(","),
+              })
+            }
             disabled={isPending}
           >
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

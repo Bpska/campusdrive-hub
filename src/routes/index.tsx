@@ -43,7 +43,7 @@ function LandingPage() {
       <header className="sticky top-0 z-50 flex h-16 w-full items-center justify-between border-b border-border bg-background/80 px-6 backdrop-blur-md">
         <div className="flex items-center gap-2">
           <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl">
-            <img src="/logo.png" alt="CRM Counsellor Logo" className="h-full w-full object-cover" />
+            <img src="/logo2.png" alt="CRM Counsellor Logo" className="h-full w-full object-cover" />
           </div>
           <div className="hidden sm:block">
             <div className="text-lg font-bold leading-tight tracking-tight text-foreground">CRM Counsellor</div>
@@ -62,12 +62,12 @@ function LandingPage() {
               Install App
             </Button>
           )}
-          <Button asChild variant="ghost" className="font-semibold text-muted-foreground hover:text-foreground">
-            <Link to="/auth">Sign In</Link>
+          <Button asChild variant="outline" className="font-semibold border-primary/20 hover:bg-primary/5">
+            <Link to="/auth" search={{ role: "admin" }}>Admin Login</Link>
           </Button>
           <Button asChild className="gap-2 shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5">
-            <Link to="/auth">
-              Get Started <ArrowRight className="h-4 w-4" />
+            <Link to="/auth" search={{ role: "staff" }}>
+              Staff Login <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
         </div>
@@ -79,7 +79,7 @@ function LandingPage() {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-background to-background" />
           <div className="container relative mx-auto px-6 text-center">
             <div className="mx-auto mb-8 flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl bg-white shadow-2xl shadow-primary/20 ring-1 ring-black/5 sm:h-32 sm:w-32">
-              <img src="/logo.png" alt="CRM Counsellor" className="h-full w-full object-cover p-2" />
+              <img src="/logo2.png" alt="CRM Counsellor" className="h-full w-full object-cover p-2" />
             </div>
             
             <h1 className="mx-auto max-w-4xl text-5xl font-extrabold tracking-tight text-foreground sm:text-7xl">
@@ -92,13 +92,18 @@ function LandingPage() {
             </p>
             
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <Button asChild size="lg" variant="outline" className="h-14 px-8 text-base border-primary/20 hover:bg-primary/5 shadow-md transition-all hover:-translate-y-1">
+                <Link to="/auth" search={{ role: "admin" }}>
+                  Admin Login
+                </Link>
+              </Button>
               <Button asChild size="lg" className="h-14 px-8 text-base shadow-xl shadow-primary/25 transition-all hover:-translate-y-1 hover:shadow-primary/40">
-                <Link to="/auth">
-                  Access Dashboard <ArrowRight className="ml-2 h-5 w-5" />
+                <Link to="/auth" search={{ role: "staff" }}>
+                  Staff Login <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
               {deferredPrompt && (
-                <Button size="lg" variant="outline" className="h-14 px-8 text-base border-primary/20 hover:bg-primary/5" onClick={handleInstallClick}>
+                <Button size="lg" variant="ghost" className="h-14 px-8 text-base text-muted-foreground hover:text-foreground" onClick={handleInstallClick}>
                   <Download className="mr-2 h-5 w-5 text-primary" /> Install Web App
                 </Button>
               )}
@@ -155,7 +160,7 @@ function LandingPage() {
         <div className="container mx-auto flex flex-col items-center justify-between gap-6 px-6 sm:flex-row">
           <div className="flex items-center gap-3">
             <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg">
-              <img src="/logo.png" alt="CRM Counsellor" className="h-full w-full object-cover grayscale opacity-80" />
+              <img src="/logo2.png" alt="CRM Counsellor" className="h-full w-full object-cover grayscale opacity-80" />
             </div>
             <span className="font-semibold text-foreground">CRM Counsellor</span>
           </div>

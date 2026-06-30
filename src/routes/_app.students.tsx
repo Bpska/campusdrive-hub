@@ -506,7 +506,7 @@ function StudentsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Students"
+        title="Lead / Consultant"
         description={`${total} leads in your pipeline.`}
         actions={
           <>
@@ -626,7 +626,7 @@ function StudentsPage() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/40">
-                  <TableHead>Student</TableHead>
+                  <TableHead>Lead/Consultant</TableHead>
                   <TableHead>Father's Name</TableHead>
                   <TableHead>Mobile</TableHead>
                   <TableHead>Address</TableHead>

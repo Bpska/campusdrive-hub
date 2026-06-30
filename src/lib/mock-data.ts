@@ -75,6 +75,8 @@ export interface Staff {
   assignedLeads: number;
   callsMade: number;
   status: "Active" | "Inactive";
+  assignedDistricts?: string;
+  assignedSteps?: string;
 }
 
 export interface Activity {

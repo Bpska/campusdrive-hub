@@ -8,7 +8,9 @@ export const getStaff = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const result = await pool.query(
       `SELECT id, name, email, assigned_leads as "assignedLeads", 
-              calls_made as "callsMade", status 
+              calls_made as "callsMade", status,
+              assigned_districts as "assignedDistricts",
+              assigned_steps as "assignedSteps"
        FROM users 
        WHERE role = 'staff' 
        ORDER BY name ASC`
@@ -22,7 +24,7 @@ export const getStaff = async (req: AuthenticatedRequest, res: Response) => {
 
 // Create a new staff member
 export const createStaff = async (req: AuthenticatedRequest, res: Response) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, assignedDistricts, assignedSteps } = req.body;
 
   if (!name || !email || !password) {
     return res.status(400).json({ error: "Name, email, and password are required" });
@@ -37,13 +39,14 @@ export const createStaff = async (req: AuthenticatedRequest, res: Response) => {
     const passwordHash = bcrypt.hashSync(password, 10);
 
     const insertSql = `
-      INSERT INTO users (id, name, email, password, role, status, assigned_leads, calls_made)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING id, name, email, assigned_leads as "assignedLeads", calls_made as "callsMade", status
+      INSERT INTO users (id, name, email, password, role, status, assigned_leads, calls_made, assigned_districts, assigned_steps)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      RETURNING id, name, email, assigned_leads as "assignedLeads", calls_made as "callsMade", status,
+                assigned_districts as "assignedDistricts", assigned_steps as "assignedSteps"
     `;
 
     const result = await pool.query(insertSql, [
-      newId, name, email.trim().toLowerCase(), passwordHash, "staff", "Active", 0, 0
+      newId, name, email.trim().toLowerCase(), passwordHash, "staff", "Active", 0, 0, assignedDistricts || "", assignedSteps || ""
     ]);
 
     // Log Activity
@@ -101,7 +104,7 @@ export const updateStaffStatus = async (req: AuthenticatedRequest, res: Response
 // Update staff member details
 export const updateStaff = async (req: AuthenticatedRequest, res: Response) => {
   const { id } = req.params;
-  const { name, email, password } = req.body;
+  const { name, email, password, assignedDistricts, assignedSteps } = req.body;
 
   try {
     const checkRes = await pool.query("SELECT * FROM users WHERE id = $1 AND role = 'staff'", [id]);
@@ -112,20 +115,26 @@ export const updateStaff = async (req: AuthenticatedRequest, res: Response) => {
 
     let updateSql = `
       UPDATE users 
-      SET name = $1, email = $2
+      SET name = $1, email = $2, assigned_districts = $3, assigned_steps = $4
     `;
-    const params = [name || oldStaff.name, (email || oldStaff.email).trim().toLowerCase()];
+    const params = [
+      name || oldStaff.name,
+      (email || oldStaff.email).trim().toLowerCase(),
+      assignedDistricts !== undefined ? assignedDistricts : oldStaff.assigned_districts,
+      assignedSteps !== undefined ? assignedSteps : oldStaff.assigned_steps
+    ];
 
     if (password) {
       const passwordHash = bcrypt.hashSync(password, 10);
-      updateSql += `, password = $3 WHERE id = $4`;
+      updateSql += `, password = $5 WHERE id = $6`;
       params.push(passwordHash, id);
     } else {
-      updateSql += ` WHERE id = $3`;
+      updateSql += ` WHERE id = $5`;
       params.push(id);
     }
 
-    updateSql += ` RETURNING id, name, email, assigned_leads as "assignedLeads", calls_made as "callsMade", status`;
+    updateSql += ` RETURNING id, name, email, assigned_leads as "assignedLeads", calls_made as "callsMade", status,
+                            assigned_districts as "assignedDistricts", assigned_steps as "assignedSteps"`;
 
     const result = await pool.query(updateSql, params);
 

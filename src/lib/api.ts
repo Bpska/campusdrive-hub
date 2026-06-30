@@ -127,7 +127,7 @@ export const staffApi = {
     });
   },
 
-  update: (id: string, staff: { name?: string; email?: string; password?: string }) => {
+  update: (id: string, staff: { name?: string; email?: string; password?: string; assignedDistricts?: string; assignedSteps?: string }) => {
     return request<Staff>(`/api/staff/${id}`, {
       method: "PUT",
       body: JSON.stringify(staff),

@@ -18,6 +18,35 @@ export const getStudents = async (req: AuthenticatedRequest, res: Response) => {
     const params: any[] = [];
     let paramIndex = 1;
 
+    // Enforce role-based district/step constraints for staff members
+    if (req.user?.role === "staff") {
+      const userRes = await pool.query(
+        "SELECT assigned_districts, assigned_steps FROM users WHERE id = $1",
+        [req.user.id]
+      );
+      if (userRes.rows.length > 0) {
+        const { assigned_districts, assigned_steps } = userRes.rows[0];
+        
+        if (assigned_districts && assigned_districts.trim() !== "") {
+          const dists = assigned_districts.split(",").map(d => d.trim().toLowerCase()).filter(Boolean);
+          if (dists.length > 0) {
+            sql += ` AND LOWER(TRIM(address)) = ANY($${paramIndex})`;
+            params.push(dists);
+            paramIndex++;
+          }
+        }
+        
+        if (assigned_steps && assigned_steps.trim() !== "") {
+          const steps = assigned_steps.split(",").map(s => s.trim()).filter(Boolean);
+          if (steps.length > 0) {
+            sql += ` AND status = ANY($${paramIndex})`;
+            params.push(steps);
+            paramIndex++;
+          }
+        }
+      }
+    }
+
     if (query) {
       sql += ` AND (LOWER(name) LIKE $${paramIndex} OR mobile LIKE $${paramIndex} OR LOWER(father_name) LIKE $${paramIndex} OR LOWER(course) LIKE $${paramIndex})`;
       params.push(`%${query}%`);
@@ -425,8 +454,43 @@ export const getCallLogs = async (req: AuthenticatedRequest, res: Response) => {
 // Get Dashboard Statistics and trends
 export const getDashboardStats = async (req: AuthenticatedRequest, res: Response) => {
   try {
+    let userFilterSql = " WHERE 1=1";
+    const filterParams: any[] = [];
+    let filterParamIndex = 1;
+    let joinFilterSql = "";
+
+    if (req.user?.role === "staff") {
+      const userRes = await pool.query(
+        "SELECT assigned_districts, assigned_steps FROM users WHERE id = $1",
+        [req.user.id]
+      );
+      if (userRes.rows.length > 0) {
+        const { assigned_districts, assigned_steps } = userRes.rows[0];
+        
+        if (assigned_districts && assigned_districts.trim() !== "") {
+          const dists = assigned_districts.split(",").map(d => d.trim().toLowerCase()).filter(Boolean);
+          if (dists.length > 0) {
+            userFilterSql += ` AND LOWER(TRIM(address)) = ANY($${filterParamIndex})`;
+            joinFilterSql += ` AND LOWER(TRIM(s.address)) = ANY($${filterParamIndex})`;
+            filterParams.push(dists);
+            filterParamIndex++;
+          }
+        }
+        
+        if (assigned_steps && assigned_steps.trim() !== "") {
+          const steps = assigned_steps.split(",").map(s => s.trim()).filter(Boolean);
+          if (steps.length > 0) {
+            userFilterSql += ` AND status = ANY($${filterParamIndex})`;
+            joinFilterSql += ` AND s.status = ANY($${filterParamIndex})`;
+            filterParams.push(steps);
+            filterParamIndex++;
+          }
+        }
+      }
+    }
+
     // Total leads count
-    const totalLeadsRes = await pool.query("SELECT COUNT(*) FROM students");
+    const totalLeadsRes = await pool.query("SELECT COUNT(*) FROM students" + userFilterSql, filterParams);
     const totalLeads = parseInt(totalLeadsRes.rows[0].count);
 
     // Total calls count (sum of all calls_made from users)
@@ -434,13 +498,13 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
     const totalCalls = parseInt(totalCallsRes.rows[0].count) || 0;
 
     // Filtered statuses
-    const interestedRes = await pool.query("SELECT COUNT(*) FROM students WHERE status IN ('Interested', 'Very Interested')");
+    const interestedRes = await pool.query("SELECT COUNT(*) FROM students WHERE status IN ('Interested', 'Very Interested')" + userFilterSql.replace("WHERE 1=1", ""), filterParams);
     const interested = parseInt(interestedRes.rows[0].count);
 
-    const visitsScheduledRes = await pool.query("SELECT COUNT(*) FROM students WHERE status = 'Visit Scheduled'");
+    const visitsScheduledRes = await pool.query("SELECT COUNT(*) FROM students WHERE status = 'Visit Scheduled'" + userFilterSql.replace("WHERE 1=1", ""), filterParams);
     const visitsScheduled = parseInt(visitsScheduledRes.rows[0].count);
 
-    const admissionsRes = await pool.query("SELECT COUNT(*) FROM students WHERE status = 'Admission Confirmed'");
+    const admissionsRes = await pool.query("SELECT COUNT(*) FROM students WHERE status = 'Admission Confirmed'" + userFilterSql.replace("WHERE 1=1", ""), filterParams);
     const admissions = parseInt(admissionsRes.rows[0].count);
 
     const staffCountRes = await pool.query("SELECT COUNT(*) FROM users WHERE role = 'staff'");
@@ -450,10 +514,10 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
     const leadSources: any[] = [];
 
     // 2. Conversion stages (funnel)
-    const contactedCountRes = await pool.query("SELECT COUNT(DISTINCT student_id) FROM call_logs");
+    const contactedCountRes = await pool.query("SELECT COUNT(DISTINCT cl.student_id) FROM call_logs cl JOIN students s ON cl.student_id = s.id WHERE 1=1" + joinFilterSql, filterParams);
     const contactedCount = parseInt(contactedCountRes.rows[0].count);
 
-    const visitedCountRes = await pool.query("SELECT COUNT(*) FROM students WHERE visit_date IS NOT NULL");
+    const visitedCountRes = await pool.query("SELECT COUNT(*) FROM students WHERE visit_date IS NOT NULL AND visit_date != ''" + userFilterSql.replace("WHERE 1=1", ""), filterParams);
     const visitedCount = parseInt(visitedCountRes.rows[0].count);
 
     const conversion = [

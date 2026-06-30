@@ -1,5 +1,5 @@
 import { createFileRoute, Navigate, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,16 +9,31 @@ import { GraduationCap, Users, BarChart3, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    role: (search.role as string) || "admin",
+  }),
   component: AuthPage,
 });
 
 function AuthPage() {
+  const { role } = Route.useSearch();
   const { user, login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("admin@crm.com");
-  const [password, setPassword] = useState("admin123");
+  const [email, setEmail] = useState(role === "staff" ? "staff@crm.com" : "admin@crm.com");
+  const [password, setPassword] = useState(role === "staff" ? "staff123" : "admin123");
   const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
+
+  // Sync state if role query parameter changes
+  useEffect(() => {
+    if (role === "staff") {
+      setEmail("staff@crm.com");
+      setPassword("staff123");
+    } else {
+      setEmail("admin@crm.com");
+      setPassword("admin123");
+    }
+  }, [role]);
 
   if (user) return <Navigate to="/dashboard" replace />;
 
@@ -52,7 +67,7 @@ function AuthPage() {
         <div className="absolute inset-0 opacity-20 [background:radial-gradient(circle_at_20%_20%,white,transparent_40%),radial-gradient(circle_at_80%_80%,white,transparent_40%)]" />
         <div className="relative flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl bg-white/15 backdrop-blur">
-            <img src="/logo.png" alt="CRM Counsellor Logo" className="h-full w-full object-cover" />
+            <img src="/logo2.png" alt="CRM Counsellor Logo" className="h-full w-full object-cover" />
           </div>
           <div>
             <div className="text-lg font-bold">CRM Counsellor</div>
@@ -92,7 +107,7 @@ function AuthPage() {
         <div className="w-full max-w-md">
           <div className="mb-8 flex items-center gap-3 lg:hidden">
             <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-primary text-primary-foreground">
-              <img src="/logo.png" alt="CRM Counsellor Logo" className="h-full w-full object-cover" />
+              <img src="/logo2.png" alt="CRM Counsellor Logo" className="h-full w-full object-cover" />
             </div>
             <div>
               <div className="text-base font-bold">CRM Counsellor</div>
