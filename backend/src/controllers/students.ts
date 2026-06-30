@@ -28,7 +28,7 @@ export const getStudents = async (req: AuthenticatedRequest, res: Response) => {
         const { assigned_districts, assigned_steps } = userRes.rows[0];
         
         if (assigned_districts && assigned_districts.trim() !== "") {
-          const dists = assigned_districts.split(",").map(d => d.trim().toLowerCase()).filter(Boolean);
+          const dists = assigned_districts.split(",").map((d: string) => d.trim().toLowerCase()).filter(Boolean);
           if (dists.length > 0) {
             sql += ` AND LOWER(TRIM(address)) = ANY($${paramIndex})`;
             params.push(dists);
@@ -37,7 +37,7 @@ export const getStudents = async (req: AuthenticatedRequest, res: Response) => {
         }
         
         if (assigned_steps && assigned_steps.trim() !== "") {
-          const steps = assigned_steps.split(",").map(s => s.trim()).filter(Boolean);
+          const steps = assigned_steps.split(",").map((s: string) => s.trim()).filter(Boolean);
           if (steps.length > 0) {
             sql += ` AND status = ANY($${paramIndex})`;
             params.push(steps);
@@ -468,7 +468,7 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
         const { assigned_districts, assigned_steps } = userRes.rows[0];
         
         if (assigned_districts && assigned_districts.trim() !== "") {
-          const dists = assigned_districts.split(",").map(d => d.trim().toLowerCase()).filter(Boolean);
+          const dists = assigned_districts.split(",").map((d: string) => d.trim().toLowerCase()).filter(Boolean);
           if (dists.length > 0) {
             userFilterSql += ` AND LOWER(TRIM(address)) = ANY($${filterParamIndex})`;
             joinFilterSql += ` AND LOWER(TRIM(s.address)) = ANY($${filterParamIndex})`;
@@ -478,7 +478,7 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
         }
         
         if (assigned_steps && assigned_steps.trim() !== "") {
-          const steps = assigned_steps.split(",").map(s => s.trim()).filter(Boolean);
+          const steps = assigned_steps.split(",").map((s: string) => s.trim()).filter(Boolean);
           if (steps.length > 0) {
             userFilterSql += ` AND status = ANY($${filterParamIndex})`;
             joinFilterSql += ` AND s.status = ANY($${filterParamIndex})`;
