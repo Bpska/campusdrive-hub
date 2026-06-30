@@ -1,13 +1,16 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PageHeader } from "@/components/app/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { type Notification } from "@/lib/mock-data";
+import { type Notification, type Student } from "@/lib/mock-data";
 import { Bell, CalendarDays, UserPlus, RotateCcw, Loader2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { notificationApi } from "@/lib/api";
+import { notificationApi, studentApi } from "@/lib/api";
 import { toast } from "sonner";
+import { useState } from "react";
+import { StudentDrawer } from "@/components/app/student-drawer";
+import { CallUpdateModal } from "@/components/app/call-modal";
 
 const iconFor = (t: Notification["type"]) =>
   t === "Visit Reminder" ? CalendarDays : t === "New Lead Assigned" ? UserPlus : RotateCcw;
@@ -18,6 +21,12 @@ export const Route = createFileRoute("/_app/notifications")({
 
 function NotificationsPage() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  const [drawerStudentId, setDrawerStudentId] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [callStudent, setCallStudent] = useState<Student | null>(null);
+  const [callOpen, setCallOpen] = useState(false);
 
   const { data: items = [], isLoading, error } = useQuery({
     queryKey: ["notifications"],
@@ -50,6 +59,42 @@ function NotificationsPage() {
     markAllReadMutation.mutate(unreadIds);
   };
 
+  const handleNotificationClick = (n: Notification) => {
+    if (!n.read) {
+      markReadMutation.mutate(n.id);
+    }
+
+    // If notification has a linked student, open the drawer
+    if (n.studentId) {
+      setDrawerStudentId(n.studentId);
+      setDrawerOpen(true);
+      return;
+    }
+
+    // Fallback: try to extract student name and navigate
+    let studentName = "";
+    if (n.body.includes("is scheduled to visit")) {
+      studentName = n.body.split(" is scheduled")[0];
+    } else if (n.body.includes("has been assigned to you")) {
+      studentName = n.body.split(" has been assigned")[0];
+    }
+
+    if (studentName) {
+      navigate({ to: "/students", search: `?q=${encodeURIComponent(studentName)}` });
+    }
+  };
+
+  const handleOpenCall = async (studentId: string) => {
+    try {
+      const student = await studentApi.get(studentId);
+      setDrawerOpen(false);
+      setCallStudent(student);
+      setCallOpen(true);
+    } catch {
+      toast.error("Could not load student details");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -78,11 +123,12 @@ function NotificationsPage() {
         ) : (
           items.map((n) => {
             const Icon = iconFor(n.type);
+            const hasStudent = !!n.studentId;
             return (
               <Card
                 key={n.id}
-                className={`border-border transition cursor-pointer hover:border-primary/50 ${!n.read ? "bg-primary/5" : ""}`}
-                onClick={() => !n.read && markReadMutation.mutate(n.id)}
+                className={`border-border transition cursor-pointer hover:border-primary/50 hover:shadow-md ${!n.read ? "bg-primary/5" : ""}`}
+                onClick={() => handleNotificationClick(n)}
               >
                 <CardContent className="flex items-start gap-4 p-4">
                   <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
@@ -95,6 +141,11 @@ function NotificationsPage() {
                       {!n.read && (
                         <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground">
                           NEW
+                        </span>
+                      )}
+                      {hasStudent && (
+                        <span className="rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 text-[10px] font-semibold">
+                          View Student →
                         </span>
                       )}
                     </div>
@@ -115,6 +166,29 @@ function NotificationsPage() {
           </Card>
         )}
       </div>
+
+      {/* Student detail drawer */}
+      <StudentDrawer
+        studentId={drawerStudentId}
+        open={drawerOpen}
+        onOpenChange={(open) => {
+          setDrawerOpen(open);
+          if (!open) setDrawerStudentId(null);
+        }}
+        onCall={() => {
+          if (drawerStudentId) handleOpenCall(drawerStudentId);
+        }}
+      />
+
+      {/* Call update modal */}
+      <CallUpdateModal
+        student={callStudent}
+        open={callOpen}
+        onOpenChange={(open) => {
+          setCallOpen(open);
+          if (!open) setCallStudent(null);
+        }}
+      />
     </div>
   );
 }

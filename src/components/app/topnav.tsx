@@ -16,7 +16,7 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { notificationApi } from "@/lib/api";
 
-export function TopNav({ onMenu }: { onMenu: () => void }) {
+export function TopNav({ onMenu, onDesktopMenu }: { onMenu: () => void; onDesktopMenu?: () => void }) {
   const { user, logout } = useAuth();
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
@@ -55,11 +55,18 @@ export function TopNav({ onMenu }: { onMenu: () => void }) {
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-card/95 px-4 backdrop-blur md:px-6">
       <button
-        className="grid h-9 w-9 place-items-center rounded-md border border-border text-foreground md:hidden"
+        className="grid h-9 w-9 place-items-center rounded-md border border-border text-foreground md:hidden hover:bg-muted"
         onClick={onMenu}
-        aria-label="Open menu"
+        aria-label="Open mobile menu"
       >
-        <Menu className="h-4 w-4" />
+        <Menu className="h-5 w-5" />
+      </button>
+      <button
+        className="hidden md:grid h-9 w-9 place-items-center rounded-md border border-border text-foreground hover:bg-muted"
+        onClick={onDesktopMenu}
+        aria-label="Toggle desktop menu"
+      >
+        <Menu className="h-5 w-5" />
       </button>
       <div className="relative hidden flex-1 max-w-md md:block">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

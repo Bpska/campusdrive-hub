@@ -95,6 +95,7 @@ export interface Notification {
   body: string;
   time: string;
   read: boolean;
+  studentId?: string | null;
 }
 
 const COURSES = [

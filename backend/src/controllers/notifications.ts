@@ -19,21 +19,22 @@ export const getNotifications = async (req: AuthenticatedRequest, res: Response)
       if (checkNotif.rows.length === 0) {
         const notifId = `N_VISIT_PRE_${student.id}_${Date.now()}`;
         await pool.query(
-          "INSERT INTO notifications (id, type, title, body, time, read) VALUES ($1, $2, $3, $4, $5, $6)",
+          "INSERT INTO notifications (id, type, title, body, time, read, student_id) VALUES ($1, $2, $3, $4, $5, $6, $7)",
           [
             notifId,
             "Visit Reminder",
             "Campus visit tomorrow",
             `${student.name} is scheduled to visit tomorrow (${student.visit_date}).`,
             "1 day before",
-            false
+            false,
+            student.id
           ]
         );
       }
     }
 
     const result = await pool.query(
-      "SELECT id, type, title, body, time, read FROM notifications ORDER BY read ASC, id DESC LIMIT 50"
+      "SELECT id, type, title, body, time, read, student_id as \"studentId\" FROM notifications ORDER BY read ASC, id DESC LIMIT 50"
     );
     res.json(result.rows);
   } catch (error) {

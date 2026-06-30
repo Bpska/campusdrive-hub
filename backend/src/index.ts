@@ -48,6 +48,7 @@ const runMigrations = async () => {
     await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS assigned_steps TEXT DEFAULT ''");
     await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS assigned_courses TEXT DEFAULT ''");
     await pool.query("DELETE FROM notifications WHERE id IN ('N1', 'N2', 'N3', 'N4', 'N5')");
+    await pool.query("ALTER TABLE notifications ADD COLUMN IF NOT EXISTS student_id VARCHAR(50) DEFAULT NULL");
     
     // Auto-detect and fix past data exam types from remarks column
     await pool.query(`

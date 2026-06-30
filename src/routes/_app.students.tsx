@@ -111,7 +111,9 @@ export const Route = createFileRoute("/_app/students")({
 
 function StudentsPage() {
   const { user } = useAuth();
-  const [query, setQuery] = useState("");
+  const searchParams = new URLSearchParams(window.location.search);
+  const initialQuery = searchParams.get("q") || "";
+  const [query, setQuery] = useState(initialQuery);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [examFilter, setExamFilter] = useState<string>("all");
   const [districtFilter, setDistrictFilter] = useState<string>("all");

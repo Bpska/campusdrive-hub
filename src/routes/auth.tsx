@@ -159,7 +159,7 @@ function AuthPage() {
               />
               Remember me for 30 days
             </label>
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full active:bg-black active:text-white active:scale-95 transition-all" disabled={loading}>
               {loading ? "Signing in…" : "Sign in"}
             </Button>
           </form>

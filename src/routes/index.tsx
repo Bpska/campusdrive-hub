@@ -57,17 +57,17 @@ function LandingPage() {
             <Button
               variant="outline"
               size="sm"
-              className="hidden sm:flex gap-2 text-primary border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all duration-300"
+              className="hidden sm:flex gap-2 text-primary border-primary/20 bg-primary/5 hover:bg-primary/10 active:bg-black active:text-white active:border-black active:scale-95 transition-all duration-200"
               onClick={handleInstallClick}
             >
               <Download className="h-4 w-4" />
               Install App
             </Button>
           )}
-          <Button asChild variant="outline" className="font-semibold border-primary/20 hover:bg-primary/5 active:scale-95 active:bg-blue-100 active:text-blue-900 transition-all">
+          <Button asChild variant="outline" className="font-semibold border-primary/20 hover:bg-blue-100 hover:text-blue-900 active:scale-95 active:bg-black active:text-white active:border-black transition-all duration-200">
             <Link to="/auth" search={{ role: "admin" }}>Admin Login</Link>
           </Button>
-          <Button asChild className="gap-2 shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 active:scale-95 active:bg-blue-700">
+          <Button asChild className="gap-2 shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 hover:bg-blue-600 active:scale-95 active:bg-black active:shadow-none duration-200">
             <Link to="/auth" search={{ role: "staff" }}>
               Staff Login <ArrowRight className="h-4 w-4" />
             </Link>
@@ -85,8 +85,8 @@ function LandingPage() {
             </div>
             
             <h1 className="mx-auto max-w-4xl text-5xl font-extrabold tracking-tight text-foreground sm:text-7xl">
-              Elevate Your Admission <br className="hidden sm:block" />
-              <span className="bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">Counselling Pipeline</span>
+              CRM <br className="hidden sm:block" />
+              <span className="bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">Counsellor</span>
             </h1>
             
             <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl">
@@ -94,18 +94,18 @@ function LandingPage() {
             </p>
             
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Button asChild size="lg" variant="outline" className="h-14 px-8 text-base border-primary/20 hover:bg-primary/5 shadow-md transition-all hover:-translate-y-1 active:scale-95 active:bg-blue-100 active:text-blue-900">
+              <Button asChild size="lg" variant="outline" className="h-14 px-8 text-base border-primary/20 hover:bg-blue-100 hover:text-blue-900 shadow-md transition-all hover:-translate-y-1 active:scale-95 active:bg-black active:text-white active:border-black active:shadow-none duration-200">
                 <Link to="/auth" search={{ role: "admin" }}>
                   Admin Login
                 </Link>
               </Button>
-              <Button asChild size="lg" className="h-14 px-8 text-base shadow-xl shadow-primary/25 transition-all hover:-translate-y-1 hover:shadow-primary/40 active:scale-95 active:bg-blue-700">
+              <Button asChild size="lg" className="h-14 px-8 text-base shadow-xl shadow-primary/25 transition-all hover:-translate-y-1 hover:bg-blue-600 hover:shadow-primary/40 active:scale-95 active:bg-black active:shadow-none duration-200">
                 <Link to="/auth" search={{ role: "staff" }}>
                   Staff Login <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
               {deferredPrompt && (
-                <Button size="lg" variant="ghost" className="h-14 px-8 text-base text-muted-foreground hover:text-foreground active:scale-95 active:bg-blue-50" onClick={handleInstallClick}>
+                <Button size="lg" variant="ghost" className="h-14 px-8 text-base text-muted-foreground hover:text-foreground active:scale-95 active:bg-black active:text-white duration-200" onClick={handleInstallClick}>
                   <Download className="mr-2 h-5 w-5 text-primary" /> Install Web App
                 </Button>
               )}

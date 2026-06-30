@@ -305,14 +305,15 @@ export const updateStudent = async (req: AuthenticatedRequest, res: Response) =>
     if (newStatus === "Visit Scheduled" && newVisitDate && (isStatusChanged || isVisitDateChanged)) {
       const notifId = `N_VISIT_${Date.now()}`;
       await pool.query(
-        "INSERT INTO notifications (id, type, title, body, time, read) VALUES ($1, $2, $3, $4, $5, $6)",
+        "INSERT INTO notifications (id, type, title, body, time, read, student_id) VALUES ($1, $2, $3, $4, $5, $6, $7)",
         [
           notifId,
           "Visit Reminder",
           "Campus visit scheduled",
           `${name || oldStudent.name} is scheduled to visit on ${newVisitDate}.`,
           "Just now",
-          false
+          false,
+          id
         ]
       );
     }
@@ -426,14 +427,15 @@ export const logCall = async (req: AuthenticatedRequest, res: Response) => {
     if (status === "Visit Scheduled" && visitDate) {
       const notifId = `N_VISIT_${Date.now()}`;
       await pool.query(
-        "INSERT INTO notifications (id, type, title, body, time, read) VALUES ($1, $2, $3, $4, $5, $6)",
+        "INSERT INTO notifications (id, type, title, body, time, read, student_id) VALUES ($1, $2, $3, $4, $5, $6, $7)",
         [
           notifId,
           "Visit Reminder",
           "Campus visit scheduled",
           `${student.name} is scheduled to visit on ${visitDate}.`,
           "Just now",
-          false
+          false,
+          id
         ]
       );
     }
