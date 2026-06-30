@@ -174,13 +174,21 @@ export const getStudentById = async (req: AuthenticatedRequest, res: Response) =
 
 // Normalize exam value to fit database CHECK constraints
 const normalizeExam = (exam: string | undefined | null): "JEE Main" | "OJEE" | "Special OJEE" | "Both" => {
-  if (!exam) return "Special OJEE";
+  if (!exam) return "OJEE"; // No exam provided — default to most common
   const str = String(exam).trim().toLowerCase();
+  if (!str) return "OJEE";
+  // Exact matches first
+  if (str === "jee main" || str === "jee") return "JEE Main";
+  if (str === "ojee") return "OJEE";
+  if (str === "special ojee" || str === "spl ojee") return "Special OJEE";
+  if (str === "both") return "Both";
+  // Partial matches
   if (str.includes("special") || str.includes("spl")) return "Special OJEE";
+  if (str.includes("both")) return "Both";
+  if (str.includes("jee main")) return "JEE Main";
   if (str.includes("jee")) return "JEE Main";
   if (str.includes("ojee")) return "OJEE";
-  if (str.includes("both")) return "Both";
-  return "Special OJEE"; // fallback default
+  return "OJEE"; // Generic fallback
 };
 
 // Create a new student lead

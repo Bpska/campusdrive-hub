@@ -464,20 +464,39 @@ function StudentsPage() {
           return key ? row[key] : undefined;
         };
         
-        const rawExam = getVal(["exam", "entrance exam", "entrance_exam"]);
-        let examVal = "Special OJEE";
+        const rawExam = getVal(["exam", "entrance exam", "entrance_exam", "exam type", "exam_type"]);
+        
+        // Helper to detect exam from any text string
+        const detectExam = (text: string): string | null => {
+          const s = text.trim().toLowerCase();
+          if (s === "jee main" || s === "jee") return "JEE Main";
+          if (s === "special ojee" || s.includes("special") || s.includes("spl")) return "Special OJEE";
+          if (s === "both") return "Both";
+          if (s.includes("ojee")) return "OJEE";
+          if (s.includes("jee")) return "JEE Main";
+          return null;
+        };
+
+        let examVal: string | undefined = undefined;
+
+        // 1. Try the dedicated exam column first
         if (rawExam) {
-          const rawExamStr = String(rawExam).trim().toLowerCase();
-          if (rawExamStr.includes("special") || rawExamStr.includes("spl")) {
-            examVal = "Special OJEE";
-          } else if (rawExamStr.includes("jee")) {
-            examVal = "JEE Main";
-          } else if (rawExamStr.includes("ojee")) {
-            examVal = "OJEE";
-          } else if (rawExamStr.includes("both")) {
-            examVal = "Both";
+          examVal = detectExam(String(rawExam)) || undefined;
+        }
+
+        // 2. If still not found, scan ALL other columns in the row for an exam keyword
+        if (!examVal) {
+          for (const val of Object.values(row)) {
+            if (val && typeof val === "string") {
+              const detected = detectExam(val);
+              if (detected) {
+                examVal = detected;
+                break;
+              }
+            }
           }
         }
+        // If still nothing found, leave undefined — backend normalizeExam will decide
         
         return {
           name: getVal(["student", "name", "student name", "student_name", "full name", "fullname"]),
