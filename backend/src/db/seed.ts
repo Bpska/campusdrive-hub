@@ -75,7 +75,7 @@ export async function seedDatabase(closePool = false) {
     // Admin user
     await pool.query(
       "INSERT INTO users (id, email, password, name, role, status, assigned_leads, calls_made) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-      ["ADM1001", "admin@crm.com", adminPasswordHash, "Aarav Admin", "admin", "Active", 0, 0]
+      ["ADM1001", "admin@crm.com", adminPasswordHash, "Padmanava Satapathy", "admin", "Active", 0, 0]
     );
 
     // Staff users

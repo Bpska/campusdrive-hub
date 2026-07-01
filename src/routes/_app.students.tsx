@@ -928,9 +928,25 @@ function StudentsPage() {
                                   title="Visit Completed"
                                   onClick={(e) => {
                                     e.stopPropagation();
+                                    const prevStatus = s.status;
+                                    const prevRemarks = s.remarks;
                                     updateMutation.mutate({
                                       id: s.id,
                                       data: { status: "Visit Completed", remarks: s.remarks || "Campus visit completed." }
+                                    }, {
+                                      onSuccess: () => {
+                                        toast.success("Visit marked as completed", {
+                                          action: {
+                                            label: "Undo",
+                                            onClick: () => {
+                                              updateMutation.mutate({
+                                                id: s.id,
+                                                data: { status: prevStatus, remarks: prevRemarks || "" }
+                                              });
+                                            },
+                                          },
+                                        });
+                                      },
                                     });
                                   }}
                                   disabled={updateMutation.isPending}

@@ -129,10 +129,13 @@ const runMigrations = async () => {
       const adminHash = bcrypt.hashSync("admin123", 10);
       await pool.query(
         "INSERT INTO users (id, email, password, name, role, status, assigned_leads, calls_made) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-        ["ADM1001", "admin@crm.com", adminHash, "Aarav Admin", "admin", "Active", 0, 0]
+        ["ADM1001", "admin@crm.com", adminHash, "Padmanava Satapathy", "admin", "Active", 0, 0]
       );
       console.log("Default admin user created (admin@crm.com / admin123).");
     }
+
+    // ── 3b. Update admin name for existing databases ─────────────────
+    await pool.query("UPDATE users SET name = 'Padmanava Satapathy' WHERE id = 'ADM1001'");
 
     // ── 4. Clean up stale seed notifications ─────────────────────────
     await pool.query("DELETE FROM notifications WHERE id IN ('N1', 'N2', 'N3', 'N4', 'N5')");

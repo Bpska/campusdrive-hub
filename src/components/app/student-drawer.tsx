@@ -38,7 +38,6 @@ export function StudentDrawer({
   const logCallMutation = useMutation({
     mutationFn: (data: { status: any; remarks: string }) => studentApi.logCall(studentId!, data),
     onSuccess: () => {
-      toast.success("Visit completed logged successfully!");
       queryClient.invalidateQueries({ queryKey: ["students"] });
       queryClient.invalidateQueries({ queryKey: ["student", studentId] });
       queryClient.invalidateQueries({ queryKey: ["dashboardStats"] });
@@ -47,6 +46,20 @@ export function StudentDrawer({
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to log visit completion");
+    }
+  });
+
+  const undoMutation = useMutation({
+    mutationFn: (data: { status: any; remarks: string }) => studentApi.update(studentId!, data),
+    onSuccess: () => {
+      toast.success("Visit completion undone");
+      queryClient.invalidateQueries({ queryKey: ["students"] });
+      queryClient.invalidateQueries({ queryKey: ["student", studentId] });
+      queryClient.invalidateQueries({ queryKey: ["dashboardStats"] });
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to undo");
     }
   });
 
@@ -87,7 +100,25 @@ export function StudentDrawer({
                   <Button 
                     variant="secondary" 
                     className="flex-1 min-w-[140px] bg-teal-50 text-teal-700 hover:bg-teal-100 hover:text-teal-800 border border-teal-200"
-                    onClick={() => logCallMutation.mutate({ status: "Visit Completed", remarks: "Campus visit completed." })}
+                    onClick={() => {
+                      const prevStatus = student.status;
+                      const prevRemarks = student.remarks;
+                      logCallMutation.mutate(
+                        { status: "Visit Completed", remarks: "Campus visit completed." },
+                        {
+                          onSuccess: () => {
+                            toast.success("Visit completed logged successfully!", {
+                              action: {
+                                label: "Undo",
+                                onClick: () => {
+                                  undoMutation.mutate({ status: prevStatus, remarks: prevRemarks || "" });
+                                },
+                              },
+                            });
+                          },
+                        }
+                      );
+                    }}
                     disabled={logCallMutation.isPending}
                   >
                     {logCallMutation.isPending ? (
