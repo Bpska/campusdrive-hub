@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/app/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,20 +14,36 @@ export const Route = createFileRoute("/_app/settings")({
 });
 
 function SettingsPage() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
+  const [name, setName] = useState(user?.name || "");
+
+  useEffect(() => {
+    if (user?.name) {
+      setName(user.name);
+    }
+  }, [user]);
+
+  const handleSave = () => {
+    if (!name.trim()) {
+      toast.error("Name cannot be empty");
+      return;
+    }
+    updateUser(name.trim());
+    toast.success("Profile updated");
+  };
 
   // Listen for Ctrl+S / Cmd+S to save settings
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
         e.preventDefault();
-        toast.success("Profile updated");
+        handleSave();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [name]);
 
   return (
     <div className="space-y-6">
@@ -38,7 +54,7 @@ function SettingsPage() {
           <CardContent className="space-y-4">
             <div className="grid gap-2">
               <Label>Full name</Label>
-              <Input defaultValue={user?.name} />
+              <Input value={name} onChange={(e) => setName(e.target.value)} />
             </div>
             <div className="grid gap-2">
               <Label>Email</Label>
@@ -48,7 +64,7 @@ function SettingsPage() {
               <Label>Role</Label>
               <Input defaultValue={user?.role} readOnly />
             </div>
-            <Button onClick={() => toast.success("Profile updated")}>Save changes</Button>
+            <Button onClick={handleSave}>Save changes</Button>
           </CardContent>
         </Card>
         <Card className="border-border">

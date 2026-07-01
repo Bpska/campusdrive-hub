@@ -9,7 +9,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { statusColor } from "@/lib/mock-data";
-import { CalendarDays, Mail, MapPin, Phone, PhoneCall, User, Loader2, Share2, Printer, CheckCircle2 } from "lucide-react";
+import { CalendarDays, Mail, MapPin, Phone, PhoneCall, User, Loader2, Share2, Printer, CheckCircle2, Undo2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { studentApi } from "@/lib/api";
 import { ShareModal } from "@/components/app/share-modal";
@@ -127,6 +127,23 @@ export function StudentDrawer({
                       <CheckCircle2 className="mr-2 h-4 w-4" />
                     )}
                     Visit Completed
+                  </Button>
+                )}
+                {student.status === "Visit Completed" && (
+                  <Button
+                    variant="secondary"
+                    className="flex-1 min-w-[100px] bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-800 border border-amber-200"
+                    onClick={() => {
+                      undoMutation.mutate({ status: "Visit Scheduled", remarks: student.remarks || "" });
+                    }}
+                    disabled={undoMutation.isPending}
+                  >
+                    {undoMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Undo2 className="mr-2 h-4 w-4" />
+                    )}
+                    Undo Visit
                   </Button>
                 )}
                 <Button variant="outline" onClick={() => setShareOpen(true)} className="flex-1 min-w-[80px]">

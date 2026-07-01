@@ -12,6 +12,7 @@ interface AuthCtx {
   user: User | null;
   login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => void;
+  updateUser: (name: string) => void;
 }
 
 const Ctx = createContext<AuthCtx | null>(null);
@@ -59,6 +60,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAuthToken(null);
         localStorage.removeItem(KEY);
         setUser(null);
+      },
+      updateUser: (name: string) => {
+        if (!user) return;
+        const updated = { ...user, name };
+        localStorage.setItem(KEY, JSON.stringify(updated));
+        setUser(updated);
       },
     }),
     [user],
