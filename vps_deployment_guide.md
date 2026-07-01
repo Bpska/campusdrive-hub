@@ -193,7 +193,7 @@ Now that SSL certificates exist, update Nginx to force HTTPS.
 
         # Proxy backend API requests
         location /api/ {
-            proxy_pass http://backend:5000/;
+            proxy_pass http://backend:5000;
             proxy_http_version 1.1;
             proxy_set_header Upgrade $http_upgrade;
             proxy_set_header Connection 'upgrade';

@@ -57,7 +57,7 @@ const dateOffset = (days: number) => {
   return d.toISOString().slice(0, 10);
 };
 
-async function main() {
+export async function seedDatabase(closePool = false) {
   console.log("Starting database seeding...");
 
   try {
@@ -197,8 +197,12 @@ async function main() {
   } catch (error) {
     console.error("Database seeding failed:", error);
   } finally {
-    await pool.end();
+    if (closePool) {
+      await pool.end();
+    }
   }
 }
 
-main();
+if (require.main === module) {
+  seedDatabase(true);
+}

@@ -9,6 +9,7 @@ import staffRoutes from "./routes/staff";
 import activitiesRoutes from "./routes/activities";
 import notificationsRoutes from "./routes/notifications";
 import dashboardRoutes from "./routes/dashboard";
+import { seedDatabase } from "./db/seed";
 
 dotenv.config();
 
@@ -44,6 +45,22 @@ app.use(errorHandler);
 // Database migrations
 const runMigrations = async () => {
   try {
+    // Check if tables exist by checking if 'users' table exists
+    const tableCheck = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'users'
+      );
+    `);
+    
+    const tablesExist = tableCheck.rows[0].exists;
+    if (!tablesExist) {
+      console.log("Database tables do not exist. Starting auto-initialization and seeding...");
+      await seedDatabase(false);
+      console.log("Database auto-initialization completed successfully.");
+    }
+
     await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS assigned_districts TEXT DEFAULT ''");
     await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS assigned_steps TEXT DEFAULT ''");
     await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS assigned_courses TEXT DEFAULT ''");
