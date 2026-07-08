@@ -23,13 +23,33 @@ function SettingsPage() {
     }
   }, [user]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name.trim()) {
       toast.error("Name cannot be empty");
       return;
     }
-    updateUser(name.trim());
-    toast.success("Profile updated");
+    
+    try {
+      const token = localStorage.getItem("crm.auth.token");
+      const res = await fetch("/api/auth/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ name: name.trim() }),
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to update profile");
+      }
+      
+      updateUser(name.trim());
+      toast.success("Profile updated");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update profile on server");
+    }
   };
 
   // Listen for Ctrl+S / Cmd+S to save settings

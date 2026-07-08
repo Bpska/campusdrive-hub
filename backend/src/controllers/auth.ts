@@ -54,3 +54,37 @@ export const getMe = async (req: AuthenticatedRequest, res: Response) => {
   }
   res.json({ user: req.user });
 };
+
+export const updateProfile = async (req: AuthenticatedRequest, res: Response) => {
+  if (!req.user) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+
+  const { name } = req.body;
+  if (!name || name.trim() === "") {
+    return res.status(400).json({ error: "Name is required" });
+  }
+
+  try {
+    const result = await pool.query(
+      "UPDATE users SET name = $1 WHERE email = $2 RETURNING id, name, email, role",
+      [name.trim(), req.user.email]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const updatedUser = result.rows[0];
+    res.json({
+      user: {
+        email: updatedUser.email,
+        name: updatedUser.name,
+        role: updatedUser.role,
+      }
+    });
+  } catch (error) {
+    console.error("Update profile error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
