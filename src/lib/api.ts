@@ -59,6 +59,10 @@ export const studentApi = {
     if (params.limit) queryParams.set("limit", String(params.limit));
     return request<StudentsResponse>(`/api/students?${queryParams.toString()}`);
   },
+
+  getMeta: () => {
+    return request<{ districts: string[]; courses: string[] }>("/api/students/meta");
+  },
   
   get: (id: string) => {
     return request<Student>(`/api/students/${id}`);

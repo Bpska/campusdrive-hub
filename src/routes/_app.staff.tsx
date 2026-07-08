@@ -56,12 +56,12 @@ function StaffPage() {
     queryFn: staffApi.list,
   });
 
-  const { data: studentsData } = useQuery({
-    queryKey: ["students-districts-lookup"],
-    queryFn: () => studentApi.list({ limit: 1 }),
+  const { data: metaData } = useQuery({
+    queryKey: ["students-meta"],
+    queryFn: () => studentApi.getMeta(),
   });
-  const uploadedDistricts = studentsData?.districts || [];
-  const uploadedCourses = studentsData?.courses || [];
+  const uploadedDistricts = metaData?.districts || [];
+  const uploadedCourses = metaData?.courses || [];
 
   const createStaffMutation = useMutation({
     mutationFn: (data: { name: string; email: string; password?: string; status: "Active" | "Inactive" }) => {
@@ -211,31 +211,43 @@ function StaffPage() {
                   </TableCell>
                   <TableCell>{s.email}</TableCell>
                   <TableCell>
-                    {s.assignedDistricts ? (
-                      <span className="text-xs font-semibold bg-blue-50 text-blue-700 px-2 py-1 rounded border border-blue-100 block max-w-[150px] truncate" title={s.assignedDistricts}>
-                        {s.assignedDistricts}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-muted-foreground italic">All Districts</span>
-                    )}
+                    <div className="flex flex-wrap gap-1 max-w-[200px]">
+                      {s.assignedDistricts && s.assignedDistricts.trim() ? (
+                        s.assignedDistricts.split(",").filter(Boolean).map((d) => (
+                          <span key={d} className="text-[10px] font-medium bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-100">
+                            {d.trim()}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic">All Districts</span>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
-                    {s.assignedSteps ? (
-                      <span className="text-xs font-semibold bg-violet-50 text-violet-700 px-2 py-1 rounded border border-violet-100 block max-w-[150px] truncate" title={s.assignedSteps}>
-                        {s.assignedSteps}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-muted-foreground italic">All Steps</span>
-                    )}
+                    <div className="flex flex-wrap gap-1 max-w-[200px]">
+                      {s.assignedSteps && s.assignedSteps.trim() ? (
+                        s.assignedSteps.split(",").filter(Boolean).map((st) => (
+                          <span key={st} className="text-[10px] font-medium bg-violet-50 text-violet-700 px-1.5 py-0.5 rounded border border-violet-100">
+                            {st.trim()}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic">All Steps</span>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
-                    {s.assignedCourses ? (
-                      <span className="text-xs font-semibold bg-emerald-50 text-emerald-700 px-2 py-1 rounded border border-emerald-100 block max-w-[150px] truncate" title={s.assignedCourses}>
-                        {s.assignedCourses}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-muted-foreground italic">All Courses</span>
-                    )}
+                    <div className="flex flex-wrap gap-1 max-w-[200px]">
+                      {s.assignedCourses && s.assignedCourses.trim() ? (
+                        s.assignedCourses.split(",").filter(Boolean).map((c) => (
+                          <span key={c} className="text-[10px] font-medium bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded border border-emerald-100">
+                            {c.trim()}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic">All Courses</span>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>{s.assignedLeads}</TableCell>
                   <TableCell>{s.callsMade}</TableCell>

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getStudents, getStudentById, createStudent, updateStudent, logCall, getCallLogs, deleteStudent, bulkCreateStudents, deleteAllStudents } from "../controllers/students";
+import { getStudents, getStudentById, createStudent, updateStudent, logCall, getCallLogs, deleteStudent, bulkCreateStudents, deleteAllStudents, getStudentsMeta } from "../controllers/students";
 import { authenticateToken, requireAdmin } from "../middleware/auth";
 
 const router = Router();
@@ -7,6 +7,7 @@ const router = Router();
 router.use(authenticateToken as any);
 
 router.get("/", getStudents as any);
+router.get("/meta", getStudentsMeta as any);
 router.get("/calls/logs", getCallLogs as any);
 router.post("/bulk", bulkCreateStudents as any);
 router.get("/:id", getStudentById as any);

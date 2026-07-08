@@ -2,6 +2,26 @@ import { Response } from "express";
 import pool from "../config/db";
 import { AuthenticatedRequest } from "../middleware/auth";
 
+// Get all distinct districts and courses (no role filtering — for staff assignment panel)
+export const getStudentsMeta = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const districtsRes = await pool.query(
+      "SELECT DISTINCT INITCAP(TRIM(address)) as district FROM students WHERE address IS NOT NULL AND address != '' ORDER BY district ASC"
+    );
+    const districts = districtsRes.rows.map(row => row.district);
+
+    const coursesRes = await pool.query(
+      "SELECT DISTINCT TRIM(course) as course FROM students WHERE course IS NOT NULL AND course != '' ORDER BY course ASC"
+    );
+    const courses = coursesRes.rows.map(row => row.course);
+
+    res.json({ districts, courses });
+  } catch (error) {
+    console.error("Get students meta error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 // Get all students
 export const getStudents = async (req: AuthenticatedRequest, res: Response) => {
   const query = (req.query.q as string || "").toLowerCase();
