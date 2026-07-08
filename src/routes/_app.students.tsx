@@ -404,39 +404,52 @@ function StudentsPage() {
     if (isHeaderless) {
       startIndex = 0; // The first line is data, so don't skip it!
       
-      // Auto-detect index mappings
       let nameIdx = -1;
       let courseIdx = -1;
       let addressIdx = -1;
       let mobileIdx = -1;
+      let examIdx = -1;
 
-      firstLineFields.forEach((field, idx) => {
-        const clean = field.trim().toLowerCase();
-        // Check for phone number
-        if (/^\+?[\d\s-]{8,15}$/.test(clean) && !isNaN(Number(clean.replace(/[\s+-]/g, "")))) {
-          mobileIdx = idx;
-        }
-        // Check for common course names
-        else if (["mca", "mba", "bca", "bba", "b.tech", "b.pharm", "m.tech", "cse", "ece", "mechanical", "civil"].includes(clean)) {
-          courseIdx = idx;
-        }
+      const unassignedIndices = Array.from({ length: firstLineFields.length }, (_, i) => i);
+
+      // 1. Identify Mobile (phone number)
+      mobileIdx = firstLineFields.findIndex(f => /^\+?[\d\s-]{8,15}$/.test(f.trim()) && !isNaN(Number(f.replace(/[\s+-]/g, ""))));
+      if (mobileIdx !== -1) {
+        unassignedIndices.splice(unassignedIndices.indexOf(mobileIdx), 1);
+      }
+
+      // 2. Identify Exam (entrance exams)
+      examIdx = firstLineFields.findIndex(f => {
+        const clean = f.trim().toLowerCase();
+        return ["ojee", "jee", "jee main", "special ojee", "spl ojee", "both"].includes(clean) || clean.includes("ojee") || clean.includes("jee");
       });
+      if (examIdx !== -1) {
+        unassignedIndices.splice(unassignedIndices.indexOf(examIdx), 1);
+      }
 
-      // Default index assignments based on standard [Name, Course, Address/District, Mobile/Contact]
-      if (firstLineFields.length === 4) {
-        if (nameIdx === -1) nameIdx = 0;
-        if (courseIdx === -1) courseIdx = 1;
-        if (addressIdx === -1) addressIdx = 2;
-        if (mobileIdx === -1) mobileIdx = 3;
-      } else {
-        if (mobileIdx === -1) {
-          const found = firstLineFields.findIndex(f => /^\+?[\d\s-]{8,15}$/.test(f.trim()));
-          if (found !== -1) mobileIdx = found;
-        }
-        if (nameIdx === -1) nameIdx = 0;
-        if (courseIdx === -1) courseIdx = firstLineFields.length > 1 ? 1 : -1;
-        if (addressIdx === -1) addressIdx = firstLineFields.length > 2 ? 2 : -1;
-        if (mobileIdx === -1) mobileIdx = firstLineFields.length > 3 ? 3 : -1;
+      // 3. Identify Course
+      courseIdx = firstLineFields.findIndex(f => {
+        const clean = f.trim().toLowerCase();
+        return ["mca", "mba", "bca", "bba", "b.tech", "b.pharm", "m.tech", "cse", "ece", "mechanical", "civil"].includes(clean) ||
+               clean.includes("b.tech") || clean.includes("btech") || clean.includes("pharm");
+      });
+      if (courseIdx !== -1) {
+        unassignedIndices.splice(unassignedIndices.indexOf(courseIdx), 1);
+      }
+
+      // 4. Identify Name (usually index 0 or the first remaining unassigned column)
+      if (unassignedIndices.includes(0)) {
+        nameIdx = 0;
+        unassignedIndices.splice(unassignedIndices.indexOf(0), 1);
+      } else if (unassignedIndices.length > 0) {
+        nameIdx = unassignedIndices[0];
+        unassignedIndices.splice(0, 1);
+      }
+
+      // 5. Identify Address (the next remaining unassigned column)
+      if (unassignedIndices.length > 0) {
+        addressIdx = unassignedIndices[0];
+        unassignedIndices.splice(0, 1);
       }
 
       headers = firstLineFields.map((_, idx) => {
@@ -444,6 +457,7 @@ function StudentsPage() {
         if (idx === courseIdx) return "course";
         if (idx === addressIdx) return "district";
         if (idx === mobileIdx) return "contact";
+        if (idx === examIdx) return "exam";
         return `col_${idx}`;
       });
     } else {
@@ -479,9 +493,15 @@ function StudentsPage() {
       
       const studentsToUpload = rawRows.map((row) => {
         const getVal = (aliases: string[]) => {
-          // Find key that matches any alias
-          const key = aliases.find(alias => row[alias] !== undefined);
-          return key ? row[key] : undefined;
+          const rowKeys = Object.keys(row);
+          const normalizedAliases = aliases.map(a => a.toLowerCase().trim());
+          for (const key of rowKeys) {
+            const normalizedKey = key.toLowerCase().trim();
+            if (normalizedAliases.includes(normalizedKey)) {
+              return row[key];
+            }
+          }
+          return undefined;
         };
         
         const rawExam = getVal(["exam", "entrance exam", "entrance_exam", "exam type", "exam_type"]);
