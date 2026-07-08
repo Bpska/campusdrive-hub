@@ -724,7 +724,9 @@ function StudentsPage() {
                       key={s.id}
                       className={cn(
                         isEditing ? "bg-muted/30 hover:bg-muted/30" : "cursor-pointer",
-                        recentlyUpdated ? "bg-primary/5 border-l-4 border-l-primary hover:bg-primary/10 transition-all duration-300 shadow-sm" : ""
+                        s.isPinned
+                          ? "bg-amber-500/10 dark:bg-amber-500/10 hover:bg-amber-500/20 border-l-4 border-l-amber-500 transition-all duration-300 shadow-sm"
+                          : (recentlyUpdated ? "bg-primary/5 border-l-4 border-l-primary hover:bg-primary/10 transition-all duration-300 shadow-sm" : "")
                       )}
                       onClick={() => !isEditing && setActiveId(s.id)}
                     >
