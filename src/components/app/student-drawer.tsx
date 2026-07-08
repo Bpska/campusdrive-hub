@@ -104,7 +104,7 @@ export function StudentDrawer({
                       const prevStatus = student.status;
                       const prevRemarks = student.remarks;
                       logCallMutation.mutate(
-                        { status: "Visit Completed", remarks: "Campus visit completed." },
+                        { status: "Visit Completed", remarks: student.remarks || "" },
                         {
                           onSuccess: () => {
                             toast.success("Visit completed logged successfully!", {

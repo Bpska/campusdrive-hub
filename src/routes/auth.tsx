@@ -19,21 +19,10 @@ function AuthPage() {
   const { role } = Route.useSearch();
   const { user, login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState(role === "staff" ? "staff@crm.com" : "admin@crm.com");
-  const [password, setPassword] = useState(role === "staff" ? "staff123" : "admin123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
-
-  // Sync state if role query parameter changes
-  useEffect(() => {
-    if (role === "staff") {
-      setEmail("staff@crm.com");
-      setPassword("staff123");
-    } else {
-      setEmail("admin@crm.com");
-      setPassword("admin123");
-    }
-  }, [role]);
 
   if (user) return <Navigate to="/dashboard" replace />;
 
@@ -50,70 +39,11 @@ function AuthPage() {
     navigate({ to: "/dashboard" });
   };
 
-  const useDemo = (role: "admin" | "staff") => {
-    if (role === "admin") {
-      setEmail("admin@crm.com");
-      setPassword("admin123");
-    } else {
-      setEmail("staff@crm.com");
-      setPassword("staff123");
-    }
-  };
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
-      {/* Left branding */}
-      <div className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-primary via-blue-600 to-blue-800 p-12 text-white lg:flex">
-        <div className="absolute inset-0 opacity-20 [background:radial-gradient(circle_at_20%_20%,white,transparent_40%),radial-gradient(circle_at_80%_80%,white,transparent_40%)]" />
-        <div className="relative flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl bg-white/15 backdrop-blur">
-            <img src="/logo2.png" alt="CRM Counsellor Logo" className="h-full w-full object-cover" />
-          </div>
-          <div>
-            <div className="text-lg font-bold">CRM Counsellor</div>
-            <div className="text-xs text-white/70">Manage • Guide • Grow</div>
-          </div>
-        </div>
-        <div className="relative space-y-6">
-          <h1 className="text-4xl font-bold leading-tight">
-            Convert more leads into confirmed admissions.
-          </h1>
-          <p className="max-w-md text-white/80">
-            Track calls, visits, follow-ups and your entire counselling pipeline in
-            one professional workspace built for admissions teams.
-          </p>
-          <ul className="grid gap-3 text-sm">
-            {[
-              { i: Users, t: "Unified student & lead pipeline" },
-              { i: BarChart3, t: "Real-time conversion analytics" },
-              { i: ShieldCheck, t: "Role-based access for staff & admins" },
-            ].map(({ i: Icon, t }) => (
-              <li key={t} className="flex items-center gap-3">
-                <span className="grid h-8 w-8 place-items-center rounded-lg bg-white/15">
-                  <Icon className="h-4 w-4" />
-                </span>
-                {t}
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="relative text-xs text-white/60">
-          © {new Date().getFullYear()} CRM Counsellor. All rights reserved.
-        </div>
-      </div>
-
-      {/* Right form */}
-      <div className="flex items-center justify-center bg-background p-6 sm:p-10">
-        <div className="w-full max-w-md">
-          <div className="mb-8 flex items-center gap-3 lg:hidden">
-            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-primary text-primary-foreground">
-              <img src="/logo2.png" alt="CRM Counsellor Logo" className="h-full w-full object-cover" />
-            </div>
-            <div>
-              <div className="text-base font-bold">CRM Counsellor</div>
-              <div className="text-xs text-muted-foreground">Manage • Guide • Grow</div>
-            </div>
-          </div>
+    <div className="flex min-h-screen items-center justify-center bg-background p-6">
+      {/* Login form */}
+      <div className="w-full max-w-md">
 
           <h2 className="text-2xl font-bold text-foreground">Sign in to your workspace</h2>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -164,33 +94,7 @@ function AuthPage() {
             </Button>
           </form>
 
-          <div className="mt-8 rounded-lg border border-border bg-muted/40 p-4">
-            <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Demo accounts
-            </div>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={() => useDemo("admin")}
-                className="rounded-md border border-border bg-card p-3 text-left text-xs transition hover:border-primary"
-              >
-                <div className="font-semibold text-foreground">Admin</div>
-                <div className="text-muted-foreground">admin@crm.com</div>
-                <div className="text-muted-foreground">admin123</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => useDemo("staff")}
-                className="rounded-md border border-border bg-card p-3 text-left text-xs transition hover:border-primary"
-              >
-                <div className="font-semibold text-foreground">Staff</div>
-                <div className="text-muted-foreground">staff@crm.com</div>
-                <div className="text-muted-foreground">staff123</div>
-              </button>
-            </div>
-          </div>
         </div>
-      </div>
     </div>
   );
 }

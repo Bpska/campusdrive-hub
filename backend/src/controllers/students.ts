@@ -8,6 +8,7 @@ export const getStudents = async (req: AuthenticatedRequest, res: Response) => {
   const statusFilter = req.query.status as string || "all";
   const examFilter = req.query.exam as string || "all";
   const districtFilter = req.query.district as string || "all";
+  const courseFilter = req.query.course as string || "all";
   const sortKey = req.query.sort as string || "name";
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
@@ -30,7 +31,7 @@ export const getStudents = async (req: AuthenticatedRequest, res: Response) => {
         if (assigned_districts && assigned_districts.trim() !== "") {
           const dists = assigned_districts.split(",").map((d: string) => d.trim().toLowerCase()).filter(Boolean);
           if (dists.length > 0) {
-            sql += ` AND LOWER(TRIM(address)) = ANY($${paramIndex})`;
+            sql += ` AND EXISTS (SELECT 1 FROM unnest($${paramIndex}::text[]) AS d WHERE LOWER(address) LIKE '%' || d || '%')`;
             params.push(dists);
             paramIndex++;
           }
@@ -75,8 +76,14 @@ export const getStudents = async (req: AuthenticatedRequest, res: Response) => {
     }
 
     if (districtFilter !== "all") {
-      sql += ` AND LOWER(TRIM(address)) = $${paramIndex}`;
-      params.push(districtFilter.toLowerCase().trim());
+      sql += ` AND LOWER(address) LIKE $${paramIndex}`;
+      params.push(`%${districtFilter.toLowerCase().trim()}%`);
+      paramIndex++;
+    }
+
+    if (courseFilter !== "all") {
+      sql += ` AND LOWER(course) = $${paramIndex}`;
+      params.push(courseFilter.toLowerCase().trim());
       paramIndex++;
     }
 
@@ -120,12 +127,19 @@ export const getStudents = async (req: AuthenticatedRequest, res: Response) => {
     );
     const districts = districtsRes.rows.map(row => row.district);
 
+    // Fetch unique courses for filter dropdown
+    const coursesRes = await pool.query(
+      "SELECT DISTINCT TRIM(course) as course FROM students WHERE course IS NOT NULL AND course != '' ORDER BY course ASC"
+    );
+    const courses = coursesRes.rows.map(row => row.course);
+
     res.json({
       students,
       total,
       page,
       totalPages: limit > 0 ? (Math.ceil(total / limit) || 1) : 1,
       districts,
+      courses,
     });
   } catch (error) {
     console.error("Get students error:", error);
@@ -520,8 +534,8 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
         if (assigned_districts && assigned_districts.trim() !== "") {
           const dists = assigned_districts.split(",").map((d: string) => d.trim().toLowerCase()).filter(Boolean);
           if (dists.length > 0) {
-            userFilterSql += ` AND LOWER(TRIM(address)) = ANY($${filterParamIndex})`;
-            joinFilterSql += ` AND LOWER(TRIM(s.address)) = ANY($${filterParamIndex})`;
+            userFilterSql += ` AND EXISTS (SELECT 1 FROM unnest($${filterParamIndex}::text[]) AS d WHERE LOWER(address) LIKE '%' || d || '%')`;
+            joinFilterSql += ` AND EXISTS (SELECT 1 FROM unnest($${filterParamIndex}::text[]) AS d WHERE LOWER(s.address) LIKE '%' || d || '%')`;
             filterParams.push(dists);
             filterParamIndex++;
           }

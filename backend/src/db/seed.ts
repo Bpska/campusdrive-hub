@@ -69,7 +69,7 @@ export async function seedDatabase(closePool = false) {
 
     // 2. Insert Users (Staff & Admin)
     console.log("Inserting users...");
-    const adminPasswordHash = bcrypt.hashSync("admin123", 10);
+    const adminPasswordHash = bcrypt.hashSync("crm#9753", 10);
     const staffPasswordHash = bcrypt.hashSync("staff123", 10);
 
     // Admin user

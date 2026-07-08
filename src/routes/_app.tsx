@@ -24,7 +24,7 @@ function AppLayout() {
       {/* Desktop sidebar — always mounted, collapses/expands on hover */}
       {desktopVisible && (
         <div
-          className="hidden md:block shrink-0 transition-all duration-300"
+          className="hidden md:block shrink-0 transition-all duration-300 print:hidden"
           onMouseEnter={() => setSidebarExpanded(true)}
           onMouseLeave={() => setSidebarExpanded(false)}
         >
@@ -47,7 +47,7 @@ function AppLayout() {
           onMenu={() => setMobileOpen(true)}
           onDesktopMenu={() => setDesktopVisible((v) => !v)}
         />
-        <main className="flex-1 space-y-6 p-4 pb-20 md:p-6 md:pb-6">
+        <main className="flex-1 space-y-6 p-4 pb-20 md:p-6 md:pb-6 print:p-0">
           <Outlet />
         </main>
         <BottomNav />

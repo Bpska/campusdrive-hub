@@ -53,7 +53,7 @@ export function TopNav({ onMenu, onDesktopMenu }: { onMenu: () => void; onDeskto
   const unread = notifications.filter((n) => !n.read).length;
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-card/95 px-4 backdrop-blur md:px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-card/95 px-4 backdrop-blur md:px-6 print:hidden">
       <button
         className="grid h-9 w-9 place-items-center rounded-md border border-border text-foreground md:hidden hover:bg-muted"
         onClick={onMenu}

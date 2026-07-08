@@ -28,7 +28,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { staffApi } from "@/lib/api";
+import { staffApi, studentApi } from "@/lib/api";
 
 const PRESET_COURSES = [
   "B.Tech CSE",
@@ -55,6 +55,13 @@ function StaffPage() {
     queryKey: ["staff"],
     queryFn: staffApi.list,
   });
+
+  const { data: studentsData } = useQuery({
+    queryKey: ["students-districts-lookup"],
+    queryFn: () => studentApi.list({ limit: 1 }),
+  });
+  const uploadedDistricts = studentsData?.districts || [];
+  const uploadedCourses = studentsData?.courses || [];
 
   const createStaffMutation = useMutation({
     mutationFn: (data: { name: string; email: string; password?: string; status: "Active" | "Inactive" }) => {
@@ -298,6 +305,8 @@ function StaffPage() {
         onSave={handleSave}
         isPending={createStaffMutation.isPending || updateStaffMutation.isPending}
         editingStaff={editingStaff}
+        uploadedDistricts={uploadedDistricts}
+        uploadedCourses={uploadedCourses}
       />
     </div>
   );
@@ -309,17 +318,21 @@ function StaffForm({
   onSave,
   isPending,
   editingStaff,
+  uploadedDistricts,
+  uploadedCourses,
 }: {
   open: boolean;
   onOpenChange: (b: boolean) => void;
   onSave: (s: { name: string; email: string; password?: string; assignedDistricts?: string; assignedSteps?: string; assignedCourses?: string }) => void;
   isPending: boolean;
   editingStaff?: Staff | null;
+  uploadedDistricts: string[];
+  uploadedCourses: string[];
 }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [assignedDistricts, setAssignedDistricts] = useState("");
+  const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
   const [selectedSteps, setSelectedSteps] = useState<string[]>([]);
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
 
@@ -330,7 +343,11 @@ function StaffForm({
         setName(editingStaff.name);
         setEmail(editingStaff.email);
         setPassword("");
-        setAssignedDistricts(editingStaff.assignedDistricts || "");
+        setSelectedDistricts(
+          editingStaff.assignedDistricts
+            ? editingStaff.assignedDistricts.split(",").map((s) => s.trim()).filter(Boolean)
+            : []
+        );
         setSelectedSteps(
           editingStaff.assignedSteps
             ? editingStaff.assignedSteps.split(",").map((s) => s.trim()).filter(Boolean)
@@ -345,12 +362,18 @@ function StaffForm({
         setName("");
         setEmail("");
         setPassword("");
-        setAssignedDistricts("");
+        setSelectedDistricts([]);
         setSelectedSteps([]);
         setSelectedCourses([]);
       }
     }
   }, [open, editingStaff]);
+
+  const handleDistrictToggle = (district: string) => {
+    setSelectedDistricts((prev) =>
+      prev.includes(district) ? prev.filter((d) => d !== district) : [...prev, district]
+    );
+  };
 
   const handleStepToggle = (step: string) => {
     setSelectedSteps((prev) =>
@@ -379,7 +402,7 @@ function StaffForm({
           name,
           email,
           password: password || undefined,
-          assignedDistricts: assignedDistricts.trim(),
+          assignedDistricts: selectedDistricts.join(","),
           assignedSteps: selectedSteps.join(","),
           assignedCourses: selectedCourses.join(","),
         });
@@ -388,7 +411,7 @@ function StaffForm({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, name, email, password, assignedDistricts, selectedSteps, selectedCourses, editingStaff, onSave]);
+  }, [open, name, email, password, selectedDistricts, selectedSteps, selectedCourses, editingStaff, onSave]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -420,13 +443,22 @@ function StaffForm({
           </div>
           <div className="grid gap-2 border-t pt-3">
             <Label className="font-semibold text-foreground">Assigned Districts</Label>
-            <Input
-              value={assignedDistricts}
-              onChange={(e) => setAssignedDistricts(e.target.value)}
-              placeholder="e.g. Cuttack, Bhubaneswar (comma-separated, blank = all)"
-            />
+            <div className="grid grid-cols-2 gap-2 max-h-[150px] overflow-y-auto border rounded-md p-2 bg-muted/20">
+              {uploadedDistricts.map((district) => (
+                <label key={district} className="flex items-center gap-2 text-xs font-medium cursor-pointer py-1 px-1.5 rounded hover:bg-muted">
+                  <Checkbox
+                    checked={selectedDistricts.includes(district)}
+                    onCheckedChange={() => handleDistrictToggle(district)}
+                  />
+                  <span>{district}</span>
+                </label>
+              ))}
+              {uploadedDistricts.length === 0 && (
+                <span className="text-xs text-muted-foreground p-1 col-span-2">No uploaded districts found.</span>
+              )}
+            </div>
             <span className="text-[11px] text-muted-foreground">
-              Enter specific districts this staff can view. Leave empty to allow access to all districts.
+              Select specific districts this staff can view. Uncheck all to allow access to all districts.
             </span>
           </div>
           <div className="grid gap-2 border-t pt-3">
@@ -449,7 +481,7 @@ function StaffForm({
           <div className="grid gap-2 border-t pt-3">
             <Label className="font-semibold text-foreground">Assigned Courses</Label>
             <div className="grid grid-cols-2 gap-2 max-h-[150px] overflow-y-auto border rounded-md p-2 bg-muted/20">
-              {PRESET_COURSES.map((course) => (
+              {uploadedCourses.map((course) => (
                 <label key={course} className="flex items-center gap-2 text-xs font-medium cursor-pointer py-1 px-1.5 rounded hover:bg-muted">
                   <Checkbox
                     checked={selectedCourses.includes(course)}
@@ -458,6 +490,9 @@ function StaffForm({
                   <span>{course}</span>
                 </label>
               ))}
+              {uploadedCourses.length === 0 && (
+                <span className="text-xs text-muted-foreground p-1 col-span-2">No uploaded courses found.</span>
+              )}
             </div>
             <span className="text-[11px] text-muted-foreground">
               Select specific courses this staff can manage. Uncheck all to allow access to all courses.
@@ -472,7 +507,7 @@ function StaffForm({
                 name,
                 email,
                 password: password || undefined,
-                assignedDistricts: assignedDistricts.trim(),
+                assignedDistricts: selectedDistricts.join(","),
                 assignedSteps: selectedSteps.join(","),
                 assignedCourses: selectedCourses.join(","),
               })

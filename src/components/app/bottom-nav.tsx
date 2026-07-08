@@ -25,7 +25,7 @@ export function BottomNav() {
         ];
 
   return (
-    <nav className="sticky bottom-0 z-30 grid grid-cols-5 border-t border-border bg-card md:hidden">
+    <nav className="sticky bottom-0 z-30 grid grid-cols-5 border-t border-border bg-card md:hidden print:hidden">
       {items.map((it) => {
         const Icon = it.icon;
         const active = path === it.to;

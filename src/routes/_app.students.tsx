@@ -28,6 +28,16 @@ import { CallUpdateModal } from "@/components/app/call-modal";
 import { StudentModal } from "@/components/app/student-modal";
 import { ShareModal } from "@/components/app/share-modal";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -125,6 +135,7 @@ function StudentsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [examFilter, setExamFilter] = useState<string>("all");
   const [districtFilter, setDistrictFilter] = useState<string>("all");
+  const [courseFilter, setCourseFilter] = useState<string>("all");
   const [sortKey, setSortKey] = useState<string>("name");
   const [page, setPage] = useState(1);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -159,8 +170,8 @@ function StudentsPage() {
   const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["students", { query, statusFilter, examFilter, districtFilter, sortKey, page }],
-    queryFn: () => studentApi.list({ q: query, status: statusFilter, exam: examFilter, district: districtFilter, sort: sortKey, page, limit: pageSize }),
+    queryKey: ["students", { query, statusFilter, examFilter, districtFilter, courseFilter, sortKey, page }],
+    queryFn: () => studentApi.list({ q: query, status: statusFilter, exam: examFilter, district: districtFilter, course: courseFilter, sort: sortKey, page, limit: pageSize }),
   });
 
   const deleteMutation = useMutation({
@@ -192,6 +203,7 @@ function StudentsPage() {
   });
 
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
   const [editName, setEditName] = useState("");
   const [editFatherName, setEditFatherName] = useState("");
   const [editMobile, setEditMobile] = useState("");
@@ -557,41 +569,43 @@ function StudentsPage() {
         description={`${total} leads in your pipeline.`}
         actions={
           <>
-            <Button variant="outline" onClick={() => window.print()}>
-              <Printer className="mr-2 h-4 w-4" /> Print Leads
-            </Button>
-            <Button variant="outline" onClick={handleExport}>
-              <Download className="mr-2 h-4 w-4" /> Export
-            </Button>
-            <Button
-              onClick={() => document.getElementById("bulk-upload-input")?.click()}
-              disabled={bulkUploadMutation.isPending}
-            >
-              {bulkUploadMutation.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Upload className="mr-2 h-4 w-4" />
-              )}
-              Bulk upload
-            </Button>
-            <input
-              type="file"
-              id="bulk-upload-input"
-              accept=".csv"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
-            <Button
-              variant="outline"
-              onClick={() => setPasteOpen(true)}
-              disabled={bulkUploadMutation.isPending}
-            >
-              <Clipboard className="mr-2 h-4 w-4" /> Paste & Upload
-            </Button>
             {user?.role === "admin" && (
-              <Button variant="destructive" onClick={() => setDeleteAllOpen(true)}>
-                <Trash2 className="mr-2 h-4 w-4" /> Delete All Leads
-              </Button>
+              <>
+                <Button variant="outline" onClick={() => window.print()}>
+                  <Printer className="mr-2 h-4 w-4" /> Print Leads
+                </Button>
+                <Button variant="outline" onClick={handleExport}>
+                  <Download className="mr-2 h-4 w-4" /> Export
+                </Button>
+                <Button
+                  onClick={() => document.getElementById("bulk-upload-input")?.click()}
+                  disabled={bulkUploadMutation.isPending}
+                >
+                  {bulkUploadMutation.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Upload className="mr-2 h-4 w-4" />
+                  )}
+                  Bulk upload
+                </Button>
+                <input
+                  type="file"
+                  id="bulk-upload-input"
+                  accept=".csv"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                <Button
+                  variant="outline"
+                  onClick={() => setPasteOpen(true)}
+                  disabled={bulkUploadMutation.isPending}
+                >
+                  <Clipboard className="mr-2 h-4 w-4" /> Paste & Upload
+                </Button>
+                <Button variant="destructive" onClick={() => setDeleteAllOpen(true)}>
+                  <Trash2 className="mr-2 h-4 w-4" /> Delete All Leads
+                </Button>
+              </>
             )}
             <Button onClick={() => setAddOpen(true)}>
               <Plus className="mr-2 h-4 w-4" /> Add Lead
@@ -627,8 +641,8 @@ function StudentsPage() {
         </div>
       )}
 
-      <Card className="border-border p-4">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_auto_auto_auto_auto]">
+      <Card className="border-border p-4 print:hidden">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_auto_auto_auto_auto_auto]">
           <div className="relative col-span-full lg:col-span-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -675,6 +689,17 @@ function StudentsPage() {
               ))}
             </SelectContent>
           </Select>
+          <Select value={courseFilter} onValueChange={(v) => { setCourseFilter(v); setPage(1); }}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Filter course" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Courses</SelectItem>
+              {data?.courses?.map((c) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Select value={sortKey} onValueChange={(v) => setSortKey(v)}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Sort by" />
@@ -712,7 +737,7 @@ function StudentsPage() {
                   <TableHead>Visit Date</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Remarks</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="text-right print:hidden">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -725,7 +750,7 @@ function StudentsPage() {
                       className={cn(
                         isEditing ? "bg-muted/30 hover:bg-muted/30" : "cursor-pointer",
                         s.isPinned
-                          ? "bg-amber-500/10 dark:bg-amber-500/10 hover:bg-amber-500/20 border-l-4 border-l-amber-500 transition-all duration-300 shadow-sm"
+                          ? "bg-gradient-to-r from-blue-500/20 via-blue-500/10 to-blue-500/5 dark:from-blue-950/40 dark:via-blue-950/20 dark:to-transparent hover:from-blue-500/25 hover:via-blue-500/15 border-l-4 border-l-blue-600 border-b-blue-200/60 dark:border-b-blue-950/60 transition-all duration-300 shadow-sm"
                           : (recentlyUpdated ? "bg-primary/5 border-l-4 border-l-primary hover:bg-primary/10 transition-all duration-300 shadow-sm" : "")
                       )}
                       onClick={() => !isEditing && setActiveId(s.id)}
@@ -742,8 +767,13 @@ function StudentsPage() {
                           </div>
                         ) : (
                           <>
-                            <div className="flex items-center gap-1.5 font-medium text-foreground group">
+                            <div className="flex items-center gap-1.5 font-medium text-foreground group flex-wrap">
                               <span>{s.name}</span>
+                              {s.isPinned && (
+                                <Badge className="bg-blue-600 dark:bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 shadow-sm animate-pulse shrink-0">
+                                  On Hold
+                                </Badge>
+                              )}
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -753,12 +783,12 @@ function StudentsPage() {
                                   });
                                 }}
                                 className={cn(
-                                  "opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-primary",
-                                  s.isPinned && "opacity-100 text-primary"
+                                  "opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-blue-500",
+                                  s.isPinned && "opacity-100 text-blue-500"
                                 )}
-                                title={s.isPinned ? "Unpin Lead" : "Pin Lead"}
+                                title={s.isPinned ? "Remove On Hold" : "On Hold"}
                               >
-                                <Pin className={cn("h-3.5 w-3.5", s.isPinned && "fill-primary text-primary")} />
+                                <Pin className={cn("h-3.5 w-3.5", s.isPinned && "fill-blue-500 text-blue-500")} />
                               </button>
                             </div>
                             <div className="flex flex-wrap items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
@@ -876,7 +906,7 @@ function StudentsPage() {
                           s.remarks
                         )}
                       </TableCell>
-                      <TableCell className={cn("text-right transition-all duration-300", recentlyUpdated ? "py-6 text-sm" : "py-3 text-xs")} onClick={(e) => e.stopPropagation()}>
+                      <TableCell className={cn("text-right transition-all duration-300 print:hidden", recentlyUpdated ? "py-6 text-sm" : "py-3 text-xs")} onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-end gap-1">
                           {isEditing ? (
                             <>
@@ -934,7 +964,7 @@ function StudentsPage() {
                                     const prevRemarks = s.remarks;
                                     updateMutation.mutate({
                                       id: s.id,
-                                      data: { status: "Visit Completed", remarks: s.remarks || "Campus visit completed." }
+                                      data: { status: "Visit Completed", remarks: s.remarks || "" }
                                     }, {
                                       onSuccess: () => {
                                         toast.success("Visit marked as completed", {
@@ -1007,7 +1037,7 @@ function StudentsPage() {
                                   className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                                   title="Delete Lead"
                                   onClick={() => {
-                                    deleteMutation.mutate(s.id);
+                                    setStudentToDelete(s);
                                   }}
                                   disabled={deleteMutation.isPending}
                                 >
@@ -1037,7 +1067,7 @@ function StudentsPage() {
           )}
         </div>
         {!isLoading && !error && (
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border p-3 text-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border p-3 text-sm print:hidden">
             <div className="text-muted-foreground">
               Page {page} of {totalPages}
             </div>
@@ -1062,6 +1092,31 @@ function StudentsPage() {
       <CallUpdateModal key={activeId} student={activeStudent} open={callOpen} onOpenChange={setCallOpen} />
       <StudentModal open={addOpen} onOpenChange={setAddOpen} />
       <ShareModal open={shareOpen} onOpenChange={setShareOpen} student={shareStudent} />
+
+      <AlertDialog open={!!studentToDelete} onOpenChange={(open) => !open && setStudentToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the lead <strong>{studentToDelete?.name}</strong> and remove their data from the server.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                if (studentToDelete) {
+                  deleteMutation.mutate(studentToDelete.id);
+                  setStudentToDelete(null);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Lead
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Paste & Upload Dialog */}
       <Dialog open={pasteOpen} onOpenChange={setPasteOpen}>

@@ -54,17 +54,24 @@ function SettingsPage() {
           <CardContent className="space-y-4">
             <div className="grid gap-2">
               <Label>Full name</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} />
+              <Input 
+                value={name} 
+                onChange={(e) => setName(e.target.value)} 
+                readOnly={user?.role === "staff"}
+                className={user?.role === "staff" ? "bg-muted cursor-not-allowed" : ""}
+              />
             </div>
             <div className="grid gap-2">
               <Label>Email</Label>
-              <Input defaultValue={user?.email} readOnly />
+              <Input defaultValue={user?.email} readOnly className="bg-muted cursor-not-allowed" />
             </div>
             <div className="grid gap-2">
               <Label>Role</Label>
-              <Input defaultValue={user?.role} readOnly />
+              <Input defaultValue={user?.role} readOnly className="bg-muted cursor-not-allowed" />
             </div>
-            <Button onClick={handleSave}>Save changes</Button>
+            {user?.role === "admin" && (
+              <Button onClick={handleSave}>Save changes</Button>
+            )}
           </CardContent>
         </Card>
         <Card className="border-border">

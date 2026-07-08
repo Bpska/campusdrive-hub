@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { statusColor } from "@/lib/mock-data";
 import { useQuery } from "@tanstack/react-query";
 import { studentApi } from "@/lib/api";
+import { Button } from "@/components/ui/button";
 import { Loader2, Printer } from "lucide-react";
 
 export const Route = createFileRoute("/_app/my-calls")({
