@@ -335,6 +335,8 @@ function StaffForm({
   const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
   const [selectedSteps, setSelectedSteps] = useState<string[]>([]);
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
+  const [customDistrict, setCustomDistrict] = useState("");
+  const [customCourse, setCustomCourse] = useState("");
 
   // Reset/populate state when opening
   useEffect(() => {
@@ -444,7 +446,7 @@ function StaffForm({
           <div className="grid gap-2 border-t pt-3">
             <Label className="font-semibold text-foreground">Assigned Districts</Label>
             <div className="grid grid-cols-2 gap-2 max-h-[150px] overflow-y-auto border rounded-md p-2 bg-muted/20">
-              {uploadedDistricts.map((district) => (
+              {Array.from(new Set([...uploadedDistricts, ...selectedDistricts])).map((district) => (
                 <label key={district} className="flex items-center gap-2 text-xs font-medium cursor-pointer py-1 px-1.5 rounded hover:bg-muted">
                   <Checkbox
                     checked={selectedDistricts.includes(district)}
@@ -453,9 +455,44 @@ function StaffForm({
                   <span>{district}</span>
                 </label>
               ))}
-              {uploadedDistricts.length === 0 && (
-                <span className="text-xs text-muted-foreground p-1 col-span-2">No uploaded districts found.</span>
+              {uploadedDistricts.length === 0 && selectedDistricts.length === 0 && (
+                <span className="text-xs text-muted-foreground p-1 col-span-2">No districts found. Add a custom one below.</span>
               )}
+            </div>
+            <div className="flex gap-2 items-center">
+              <Input
+                value={customDistrict}
+                onChange={(e) => setCustomDistrict(e.target.value)}
+                placeholder="Custom district..."
+                className="h-7 text-xs"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (customDistrict.trim()) {
+                      if (!selectedDistricts.includes(customDistrict.trim())) {
+                        setSelectedDistricts([...selectedDistricts, customDistrict.trim()]);
+                      }
+                      setCustomDistrict("");
+                    }
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs px-3"
+                onClick={() => {
+                  if (customDistrict.trim()) {
+                    if (!selectedDistricts.includes(customDistrict.trim())) {
+                      setSelectedDistricts([...selectedDistricts, customDistrict.trim()]);
+                    }
+                    setCustomDistrict("");
+                  }
+                }}
+              >
+                Add
+              </Button>
             </div>
             <span className="text-[11px] text-muted-foreground">
               Select specific districts this staff can view. Uncheck all to allow access to all districts.
@@ -481,7 +518,7 @@ function StaffForm({
           <div className="grid gap-2 border-t pt-3">
             <Label className="font-semibold text-foreground">Assigned Courses</Label>
             <div className="grid grid-cols-2 gap-2 max-h-[150px] overflow-y-auto border rounded-md p-2 bg-muted/20">
-              {uploadedCourses.map((course) => (
+              {Array.from(new Set([...uploadedCourses, ...selectedCourses])).map((course) => (
                 <label key={course} className="flex items-center gap-2 text-xs font-medium cursor-pointer py-1 px-1.5 rounded hover:bg-muted">
                   <Checkbox
                     checked={selectedCourses.includes(course)}
@@ -490,9 +527,44 @@ function StaffForm({
                   <span>{course}</span>
                 </label>
               ))}
-              {uploadedCourses.length === 0 && (
-                <span className="text-xs text-muted-foreground p-1 col-span-2">No uploaded courses found.</span>
+              {uploadedCourses.length === 0 && selectedCourses.length === 0 && (
+                <span className="text-xs text-muted-foreground p-1 col-span-2">No courses found. Add a custom one below.</span>
               )}
+            </div>
+            <div className="flex gap-2 items-center">
+              <Input
+                value={customCourse}
+                onChange={(e) => setCustomCourse(e.target.value)}
+                placeholder="Custom course..."
+                className="h-7 text-xs"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (customCourse.trim()) {
+                      if (!selectedCourses.includes(customCourse.trim())) {
+                        setSelectedCourses([...selectedCourses, customCourse.trim()]);
+                      }
+                      setCustomCourse("");
+                    }
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs px-3"
+                onClick={() => {
+                  if (customCourse.trim()) {
+                    if (!selectedCourses.includes(customCourse.trim())) {
+                      setSelectedCourses([...selectedCourses, customCourse.trim()]);
+                    }
+                    setCustomCourse("");
+                  }
+                }}
+              >
+                Add
+              </Button>
             </div>
             <span className="text-[11px] text-muted-foreground">
               Select specific courses this staff can manage. Uncheck all to allow access to all courses.
