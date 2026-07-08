@@ -7,8 +7,8 @@ const router = Router();
 router.use(authenticateToken as any);
 
 router.get("/", getStudents as any);
-router.get("/meta", getStudentsMeta as any);
 router.get("/calls/logs", getCallLogs as any);
+router.get("/meta", getStudentsMeta as any);
 router.post("/bulk", bulkCreateStudents as any);
 router.get("/:id", getStudentById as any);
 router.post("/", createStudent as any);
