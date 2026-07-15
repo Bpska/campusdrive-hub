@@ -50,7 +50,7 @@ export function StaffDashboard() {
     : [];
 
   const allStudents = studentsData?.students || [];
-  const myStudents = allStudents.filter((s) => s.assignedTo === user?.name);
+  const myStudents = allStudents;
 
   // Calculate stats for current staff
   const visitsScheduled = myStudents.filter((s) => s.status === "Visit Scheduled").length;

@@ -735,6 +735,21 @@ function StudentsPage() {
       </Card>
 
       <Card className="overflow-hidden border-border">
+        {!isLoading && !error && (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-3 text-sm print:hidden">
+            <div className="text-muted-foreground">
+              Page {page} of {totalPages}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
+                <ChevronLeft className="h-4 w-4" /> Prev
+              </Button>
+              <Button variant="outline" size="sm" disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>
+                Next <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
         <div className="overflow-x-auto">
           {isLoading ? (
             <div className="flex py-20 items-center justify-center">
@@ -972,43 +987,9 @@ function StudentsPage() {
                             </>
                           ) : (
                             <>
-                              {s.status !== "Visit Completed" && s.status !== "Admission Confirmed" && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-teal-600 hover:text-teal-700 hover:bg-teal-50"
-                                  title="Visit Completed"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    const prevStatus = s.status;
-                                    const prevRemarks = s.remarks;
-                                    updateMutation.mutate({
-                                      id: s.id,
-                                      data: { status: "Visit Completed", remarks: s.remarks || "" }
-                                    }, {
-                                      onSuccess: () => {
-                                        toast.success("Visit marked as completed", {
-                                          action: {
-                                            label: "Undo",
-                                            onClick: () => {
-                                              updateMutation.mutate({
-                                                id: s.id,
-                                                data: { status: prevStatus, remarks: prevRemarks || "" }
-                                              });
-                                            },
-                                          },
-                                        });
-                                      },
-                                    });
-                                  }}
-                                  disabled={updateMutation.isPending}
-                                >
-                                  <CheckCircle2 className="h-4 w-4" />
-                                </Button>
-                              )}
                               <Button
-                                asChild
-                                variant="ghost"
+                                 asChild
+                                 variant="ghost"
                                 size="icon"
                                 className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10"
                                 title="Call Student"
@@ -1086,21 +1067,6 @@ function StudentsPage() {
             </Table>
           )}
         </div>
-        {!isLoading && !error && (
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border p-3 text-sm print:hidden">
-            <div className="text-muted-foreground">
-              Page {page} of {totalPages}
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
-                <ChevronLeft className="h-4 w-4" /> Prev
-              </Button>
-              <Button variant="outline" size="sm" disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>
-                Next <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        )}
       </Card>
 
       <StudentDrawer

@@ -64,7 +64,7 @@ function StaffPage() {
   const uploadedCourses = metaData?.courses || [];
 
   const createStaffMutation = useMutation({
-    mutationFn: (data: { name: string; email: string; password?: string; status: "Active" | "Inactive" }) => {
+    mutationFn: (data: { name: string; email: string; password?: string; status: "Active" | "Inactive"; assignedDistricts?: string; assignedSteps?: string; assignedCourses?: string }) => {
       return staffApi.create(data);
     },
     onSuccess: () => {
@@ -79,7 +79,7 @@ function StaffPage() {
   });
 
   const updateStaffMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: { name?: string; email?: string; password?: string } }) => {
+    mutationFn: ({ id, data }: { id: string; data: { name?: string; email?: string; password?: string; assignedDistricts?: string; assignedSteps?: string; assignedCourses?: string } }) => {
       return staffApi.update(id, data);
     },
     onSuccess: () => {
