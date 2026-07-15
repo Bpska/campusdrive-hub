@@ -111,7 +111,7 @@ export const getStudents = async (req: AuthenticatedRequest, res: Response) => {
     const validSortKeys = ["name", "status", "course", "visit_date", "id"];
     const actualSortKey = validSortKeys.includes(sortKey) ? sortKey : "name";
     const dbSortKey = actualSortKey === "visitDate" || actualSortKey === "visit_date" ? "visit_date" : actualSortKey;
-    sql += ` ORDER BY is_pinned DESC, ${dbSortKey} ASC`;
+    sql += ` ORDER BY ${dbSortKey} ASC`;
 
     // Execute count query
     const countResult = await pool.query(`SELECT COUNT(*) FROM (${sql}) AS counted`, params);

@@ -110,6 +110,7 @@ export function StudentModal({
   const [mobile, setMobile] = useState("");
   const [exam, setExam] = useState<"JEE Main" | "OJEE" | "Special OJEE" | "Both">("Special OJEE");
   const [course, setCourse] = useState("");
+  const [address, setAddress] = useState("");
 
   // Reset fields on open
   useEffect(() => {
@@ -118,6 +119,7 @@ export function StudentModal({
       setMobile("");
       setExam("Special OJEE");
       setCourse("");
+      setAddress("");
     }
   }, [open]);
 
@@ -127,6 +129,7 @@ export function StudentModal({
       mobile: string;
       exam: "JEE Main" | "OJEE" | "Special OJEE" | "Both";
       course?: string;
+      address?: string;
     }) => studentApi.create(newStudent as any),
     onSuccess: (data) => {
       toast.success("Lead created successfully", {
@@ -153,6 +156,7 @@ export function StudentModal({
       mobile: mobile.trim(),
       exam,
       course: course.trim() || undefined,
+      address: address.trim() || undefined,
     });
   };
 
@@ -172,13 +176,14 @@ export function StudentModal({
           mobile: mobile.trim(),
           exam,
           course: course.trim() || undefined,
+          address: address.trim() || undefined,
         });
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, name, mobile, exam, course, createMutation]);
+  }, [open, name, mobile, exam, course, address, createMutation]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -213,6 +218,17 @@ export function StudentModal({
                 onChange={(e) => setMobile(e.target.value)}
                 placeholder="e.g. +91 9439012345"
                 required
+              />
+            </div>
+
+            {/* Address / District */}
+            <div className="grid gap-2">
+              <Label htmlFor="std-address">Address / District</Label>
+              <Input
+                id="std-address"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="e.g. Bhubaneswar, Khordha"
               />
             </div>
 
