@@ -136,7 +136,7 @@ function StudentsPage() {
   const [examFilter, setExamFilter] = useState<string>("all");
   const [districtFilter, setDistrictFilter] = useState<string>("all");
   const [courseFilter, setCourseFilter] = useState<string>("all");
-  const [sortKey, setSortKey] = useState<string>("name");
+  const [sortKey, setSortKey] = useState<string>("id");
   const [page, setPage] = useState(1);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [callOpen, setCallOpen] = useState(false);
@@ -725,6 +725,7 @@ function StudentsPage() {
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="id">Sort: Default (ID)</SelectItem>
               <SelectItem value="name">Sort: Name</SelectItem>
               <SelectItem value="status">Sort: Status</SelectItem>
               <SelectItem value="course">Sort: Course</SelectItem>

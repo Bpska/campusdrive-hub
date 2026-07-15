@@ -29,7 +29,7 @@ export const getStudents = async (req: AuthenticatedRequest, res: Response) => {
   const examFilter = req.query.exam as string || "all";
   const districtFilter = req.query.district as string || "all";
   const courseFilter = req.query.course as string || "all";
-  const sortKey = req.query.sort as string || "name";
+  const sortKey = req.query.sort as string || "id";
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
   const offset = (page - 1) * limit;
@@ -109,7 +109,7 @@ export const getStudents = async (req: AuthenticatedRequest, res: Response) => {
 
     // Sorting
     const validSortKeys = ["name", "status", "course", "visit_date", "id"];
-    const actualSortKey = validSortKeys.includes(sortKey) ? sortKey : "name";
+    const actualSortKey = validSortKeys.includes(sortKey) ? sortKey : "id";
     const dbSortKey = actualSortKey === "visitDate" || actualSortKey === "visit_date" ? "visit_date" : actualSortKey;
     sql += ` ORDER BY ${dbSortKey} ASC, id ASC`;
 
