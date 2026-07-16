@@ -530,7 +530,7 @@ function StaffForm({
           <div className="grid gap-2 border-t pt-3">
             <Label className="font-semibold text-foreground">Assigned Courses</Label>
             <div className="grid grid-cols-2 gap-2 max-h-[150px] overflow-y-auto border rounded-md p-2 bg-muted/20">
-              {Array.from(new Set([...uploadedCourses, ...selectedCourses])).map((course) => (
+              {Array.from(new Set([...PRESET_COURSES, ...uploadedCourses, ...selectedCourses])).map((course) => (
                 <label key={course} className="flex items-center gap-2 text-xs font-medium cursor-pointer py-1 px-1.5 rounded hover:bg-muted">
                   <Checkbox
                     checked={selectedCourses.includes(course)}

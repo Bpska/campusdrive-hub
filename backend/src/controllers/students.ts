@@ -57,6 +57,8 @@ export const getStudents = async (req: AuthenticatedRequest, res: Response) => {
           }
         }
         
+        // Commented out to prevent automatic deletion/disappearance of student rows when updated by staff
+        /*
         if (assigned_steps && assigned_steps.trim() !== "") {
           const steps = assigned_steps.split(",").map((s: string) => s.trim()).filter(Boolean);
           if (steps.length > 0) {
@@ -65,6 +67,7 @@ export const getStudents = async (req: AuthenticatedRequest, res: Response) => {
             paramIndex++;
           }
         }
+        */
 
         if (assigned_courses && assigned_courses.trim() !== "") {
           const courses = assigned_courses.split(",").map((c: string) => c.trim().toLowerCase()).filter(Boolean);
