@@ -78,3 +78,25 @@ export const deleteNotification = async (req: AuthenticatedRequest, res: Respons
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+// Create a new notification (e.g., error report or staff message)
+export const createNotification = async (req: AuthenticatedRequest, res: Response) => {
+  const { type, title, body } = req.body;
+
+  if (!title || !body) {
+    return res.status(400).json({ error: "Title and body are required" });
+  }
+
+  try {
+    const notifId = `N_ERR_${Date.now()}`;
+    const result = await pool.query(
+      "INSERT INTO notifications (id, type, title, body, time, read) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+      [notifId, type || "Error Report", title, body, "Just now", false]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error("Create notification error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};

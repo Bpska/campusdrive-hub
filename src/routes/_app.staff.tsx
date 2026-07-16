@@ -35,10 +35,15 @@ const PRESET_COURSES = [
   "B.Tech ECE",
   "B.Tech Mechanical",
   "B.Tech Civil",
+  "B.Tech AIML",
+  "B.Tech IT",
+  "B.Tech Electical",
   "BBA",
-  "MBA",
-  "B.Pharm",
   "BCA",
+  "M.SC",
+  "MBA (HR)",
+  "MBA (FM)",
+  "MBA (MM)",
 ];
 
 export const Route = createFileRoute("/_app/staff")({

@@ -160,6 +160,13 @@ export const notificationApi = {
     return request<Notification[]>("/api/notifications");
   },
   
+  create: (notification: { type: string; title: string; body: string }) => {
+    return request<Notification>("/api/notifications", {
+      method: "POST",
+      body: JSON.stringify(notification),
+    });
+  },
+  
   markRead: (id: string) => {
     return request<{ message: string }>(`/api/notifications/${id}/read`, {
       method: "PUT",

@@ -45,14 +45,16 @@ import { studentApi } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 const PRESET_COURSES = [
-  "B.Tech CSE",
-  "B.Tech ECE",
-  "B.Tech Mechanical",
-  "B.Tech Civil",
-  "BBA",
+  "B.TECH",
+  "M.TECH",
   "MBA",
-  "B.Pharm",
+  "MCA",
+  "BBA",
   "BCA",
+  "M.SC",
+  "MBA (HR)",
+  "MBA (FM)",
+  "MBA (MM)",
 ];
 
 /** Inline hybrid course selector for table row editing */

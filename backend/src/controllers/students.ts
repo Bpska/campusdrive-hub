@@ -341,6 +341,23 @@ export const updateStudent = async (req: AuthenticatedRequest, res: Response) =>
         "INSERT INTO activities (actor, action, target) VALUES ($1, $2, $3)",
         [actorName, `updated status of`, name || oldStudent.name]
       );
+
+      // Automatically create a call log when status is changed
+      const logsCountRes = await pool.query("SELECT COUNT(*) FROM call_logs WHERE student_id = $1", [id]);
+      const nextLogIndex = parseInt(logsCountRes.rows[0].count);
+      const newLogId = `LOG${id.replace("STU", "")}-${nextLogIndex}`;
+      const todayStr = new Date().toISOString().slice(0, 10);
+
+      await pool.query(
+        "INSERT INTO call_logs (id, student_id, date, status, remarks, by) VALUES ($1, $2, $3, $4, $5, $6)",
+        [newLogId, id, todayStr, status, remarks || "Status updated.", actorName]
+      );
+
+      // Increment calls_made count for the staff member
+      await pool.query(
+        "UPDATE users SET calls_made = calls_made + 1 WHERE name = $1",
+        [actorName]
+      );
     } else {
       await pool.query(
         "INSERT INTO activities (actor, action, target) VALUES ($1, $2, $3)",

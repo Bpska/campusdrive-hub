@@ -4,12 +4,34 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CalendarDays, RotateCcw, Users, Loader2, MapPin, BookOpen, ListChecks } from "lucide-react";
 import { statusColor } from "@/lib/mock-data";
-import { useQuery } from "@tanstack/react-query";
-import { studentApi, activityApi, staffApi } from "@/lib/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { studentApi, activityApi, staffApi, notificationApi } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export function StaffDashboard() {
   const { user } = useAuth();
+  const [errorMessage, setErrorMessage] = useState("");
+  const queryClient = useQueryClient();
+
+  const sendErrorMutation = useMutation({
+    mutationFn: (messageBody: string) =>
+      notificationApi.create({
+        type: "Error Report",
+        title: `Staff Error Report by ${user?.name || "Counselor"}`,
+        body: messageBody,
+      }),
+    onSuccess: () => {
+      toast.success("Error report sent to admin successfully");
+      setErrorMessage("");
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to send error report");
+    },
+  });
 
   const { data: studentsData, isLoading: isStudentsLoading } = useQuery({
     queryKey: ["students", "my-leads"],
@@ -168,6 +190,31 @@ export function StaffDashboard() {
                 No recent activity logged by you.
               </div>
             )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Report Error to Admin */}
+      <Card className="border-border">
+        <CardHeader>
+          <CardTitle className="text-base">Report Error / Send Message to Admin</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <textarea
+              className="w-full min-h-[80px] rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-foreground"
+              placeholder="Describe the error or type a message for the admin..."
+              value={errorMessage}
+              onChange={(e) => setErrorMessage(e.target.value)}
+            />
+            <Button
+              onClick={() => sendErrorMutation.mutate(errorMessage)}
+              disabled={sendErrorMutation.isPending || !errorMessage.trim()}
+              className="bg-primary text-primary-foreground shadow hover:bg-primary/90"
+            >
+              {sendErrorMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Send Message
+            </Button>
           </div>
         </CardContent>
       </Card>
