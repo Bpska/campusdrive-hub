@@ -42,16 +42,22 @@ export const getStudents = async (req: AuthenticatedRequest, res: Response) => {
     // Enforce role-based district/step constraints for staff members
     if (req.user?.role === "staff") {
       const userRes = await pool.query(
-        "SELECT assigned_districts, assigned_steps, assigned_courses FROM users WHERE id = $1",
+        "SELECT name, assigned_districts, assigned_steps, assigned_courses FROM users WHERE id = $1",
         [req.user.id]
       );
       if (userRes.rows.length > 0) {
-        const { assigned_districts, assigned_steps, assigned_courses } = userRes.rows[0];
+        const { name: staffName, assigned_districts, assigned_steps, assigned_courses } = userRes.rows[0];
+        
+        let staffConditions = [`LOWER(assigned_to) = LOWER($${paramIndex})`];
+        params.push(staffName);
+        paramIndex++;
+
+        let constraintConditions = [];
         
         if (assigned_districts && assigned_districts.trim() !== "") {
           const dists = assigned_districts.split(",").map((d: string) => d.trim().toLowerCase()).filter(Boolean);
           if (dists.length > 0) {
-            sql += ` AND EXISTS (SELECT 1 FROM unnest($${paramIndex}::text[]) AS d WHERE LOWER(address) LIKE '%' || d || '%')`;
+            constraintConditions.push(`EXISTS (SELECT 1 FROM unnest($${paramIndex}::text[]) AS d WHERE LOWER(address) LIKE '%' || d || '%')`);
             params.push(dists);
             paramIndex++;
           }
@@ -62,7 +68,7 @@ export const getStudents = async (req: AuthenticatedRequest, res: Response) => {
         if (assigned_steps && assigned_steps.trim() !== "") {
           const steps = assigned_steps.split(",").map((s: string) => s.trim()).filter(Boolean);
           if (steps.length > 0) {
-            sql += ` AND status = ANY($${paramIndex})`;
+            constraintConditions.push(`status = ANY($${paramIndex})`);
             params.push(steps);
             paramIndex++;
           }
@@ -72,11 +78,17 @@ export const getStudents = async (req: AuthenticatedRequest, res: Response) => {
         if (assigned_courses && assigned_courses.trim() !== "") {
           const courses = assigned_courses.split(",").map((c: string) => c.trim().toLowerCase()).filter(Boolean);
           if (courses.length > 0) {
-            sql += ` AND LOWER(course) = ANY($${paramIndex})`;
+            constraintConditions.push(`LOWER(course) = ANY($${paramIndex})`);
             params.push(courses);
             paramIndex++;
           }
         }
+
+        if (constraintConditions.length > 0) {
+          staffConditions.push(`(${constraintConditions.join(" AND ")})`);
+        }
+
+        sql += ` AND (${staffConditions.join(" OR ")})`;
       }
     }
 
@@ -565,17 +577,25 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
 
     if (req.user?.role === "staff") {
       const userRes = await pool.query(
-        "SELECT assigned_districts, assigned_steps, assigned_courses FROM users WHERE id = $1",
+        "SELECT name, assigned_districts, assigned_steps, assigned_courses FROM users WHERE id = $1",
         [req.user.id]
       );
       if (userRes.rows.length > 0) {
-        const { assigned_districts, assigned_steps, assigned_courses } = userRes.rows[0];
+        const { name: staffName, assigned_districts, assigned_steps, assigned_courses } = userRes.rows[0];
         
+        let staffConditions = [`LOWER(assigned_to) = LOWER($${filterParamIndex})`];
+        let staffJoinConditions = [`LOWER(s.assigned_to) = LOWER($${filterParamIndex})`];
+        filterParams.push(staffName);
+        filterParamIndex++;
+
+        let constraintConditions = [];
+        let constraintJoinConditions = [];
+
         if (assigned_districts && assigned_districts.trim() !== "") {
           const dists = assigned_districts.split(",").map((d: string) => d.trim().toLowerCase()).filter(Boolean);
           if (dists.length > 0) {
-            userFilterSql += ` AND EXISTS (SELECT 1 FROM unnest($${filterParamIndex}::text[]) AS d WHERE LOWER(address) LIKE '%' || d || '%')`;
-            joinFilterSql += ` AND EXISTS (SELECT 1 FROM unnest($${filterParamIndex}::text[]) AS d WHERE LOWER(s.address) LIKE '%' || d || '%')`;
+            constraintConditions.push(`EXISTS (SELECT 1 FROM unnest($${filterParamIndex}::text[]) AS d WHERE LOWER(address) LIKE '%' || d || '%')`);
+            constraintJoinConditions.push(`EXISTS (SELECT 1 FROM unnest($${filterParamIndex}::text[]) AS d WHERE LOWER(s.address) LIKE '%' || d || '%')`);
             filterParams.push(dists);
             filterParamIndex++;
           }
@@ -584,8 +604,8 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
         if (assigned_steps && assigned_steps.trim() !== "") {
           const steps = assigned_steps.split(",").map((s: string) => s.trim()).filter(Boolean);
           if (steps.length > 0) {
-            userFilterSql += ` AND status = ANY($${filterParamIndex})`;
-            joinFilterSql += ` AND s.status = ANY($${filterParamIndex})`;
+            constraintConditions.push(`status = ANY($${filterParamIndex})`);
+            constraintJoinConditions.push(`s.status = ANY($${filterParamIndex})`);
             filterParams.push(steps);
             filterParamIndex++;
           }
@@ -594,12 +614,22 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
         if (assigned_courses && assigned_courses.trim() !== "") {
           const courses = assigned_courses.split(",").map((c: string) => c.trim().toLowerCase()).filter(Boolean);
           if (courses.length > 0) {
-            userFilterSql += ` AND LOWER(course) = ANY($${filterParamIndex})`;
-            joinFilterSql += ` AND LOWER(s.course) = ANY($${filterParamIndex})`;
+            constraintConditions.push(`LOWER(course) = ANY($${filterParamIndex})`);
+            constraintJoinConditions.push(`LOWER(s.course) = ANY($${filterParamIndex})`);
             filterParams.push(courses);
             filterParamIndex++;
           }
         }
+
+        if (constraintConditions.length > 0) {
+          staffConditions.push(`(${constraintConditions.join(" AND ")})`);
+        }
+        if (constraintJoinConditions.length > 0) {
+          staffJoinConditions.push(`(${constraintJoinConditions.join(" AND ")})`);
+        }
+
+        userFilterSql += ` AND (${staffConditions.join(" OR ")})`;
+        joinFilterSql += ` AND (${staffJoinConditions.join(" OR ")})`;
       }
     }
 

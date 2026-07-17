@@ -45,8 +45,11 @@ import { studentApi } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 const PRESET_COURSES = [
-  "B.TECH",
-  "M.TECH",
+  "B.Tech CSE",
+  "B.Tech ECE",
+  "B.Tech Mechanical",
+  "B.Tech Civil",
+  "BBA",
   "MBA",
   "MCA",
   "BBA",
