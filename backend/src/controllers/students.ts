@@ -48,7 +48,10 @@ export const getStudents = async (req: AuthenticatedRequest, res: Response) => {
       if (userRes.rows.length > 0) {
         const { name: staffName, assigned_districts, assigned_steps, assigned_courses } = userRes.rows[0];
         
-        let staffConditions = [`LOWER(assigned_to) = LOWER($${paramIndex})`];
+        let staffConditions = [
+          `LOWER(assigned_to) = LOWER($${paramIndex})`,
+          `EXISTS (SELECT 1 FROM call_logs cl WHERE cl.student_id = students.id AND LOWER(cl.by) = LOWER($${paramIndex}))`
+        ];
         params.push(staffName);
         paramIndex++;
 
@@ -322,6 +325,11 @@ export const updateStudent = async (req: AuthenticatedRequest, res: Response) =>
     }
     const oldStudent = checkRes.rows[0];
 
+    let targetAssignedTo = assignedTo || oldStudent.assigned_to;
+    if (req.user?.role === "staff") {
+      targetAssignedTo = req.user.name;
+    }
+
     const updateSql = `
       UPDATE students
       SET name = $1, father_name = $2, mobile = $3, address = $4,
@@ -340,7 +348,7 @@ export const updateStudent = async (req: AuthenticatedRequest, res: Response) =>
       course || oldStudent.course,
       status || oldStudent.status,
       remarks !== undefined ? remarks : oldStudent.remarks,
-      assignedTo || oldStudent.assigned_to,
+      targetAssignedTo,
       visitDate !== undefined ? visitDate : oldStudent.visit_date,
       isPinned !== undefined ? isPinned : oldStudent.is_pinned,
       id
@@ -400,14 +408,14 @@ export const updateStudent = async (req: AuthenticatedRequest, res: Response) =>
     }
 
     // Handle staff reassignment counts
-    if (assignedTo && assignedTo !== oldStudent.assigned_to) {
+    if (targetAssignedTo && targetAssignedTo !== oldStudent.assigned_to) {
       await pool.query(
         "UPDATE users SET assigned_leads = assigned_leads - 1 WHERE name = $1",
         [oldStudent.assigned_to]
       );
       await pool.query(
         "UPDATE users SET assigned_leads = assigned_leads + 1 WHERE name = $1",
-        [assignedTo]
+        [targetAssignedTo]
       );
     }
 
@@ -473,11 +481,26 @@ export const logCall = async (req: AuthenticatedRequest, res: Response) => {
     const updatedFatherName = fatherName || student.father_name;
     const updatedExam = exam ? normalizeExam(exam) : student.exam;
 
+    let updatedAssignedTo = student.assigned_to;
+    if (req.user?.role === "staff" && student.assigned_to !== req.user.name) {
+      updatedAssignedTo = req.user.name;
+
+      // Handle staff reassignment counts
+      await pool.query(
+        "UPDATE users SET assigned_leads = assigned_leads - 1 WHERE name = $1",
+        [student.assigned_to]
+      );
+      await pool.query(
+        "UPDATE users SET assigned_leads = assigned_leads + 1 WHERE name = $1",
+        [req.user.name]
+      );
+    }
+
     await pool.query(
       `UPDATE students 
        SET status = $1, remarks = $2, course = $3, visit_date = $4, address = $5,
-           father_name = $6, exam = $7, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $8`,
+           father_name = $6, exam = $7, assigned_to = $8, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $9`,
       [
         updatedStatus, 
         updatedRemarks, 
@@ -486,6 +509,7 @@ export const logCall = async (req: AuthenticatedRequest, res: Response) => {
         updatedAddress, 
         updatedFatherName, 
         updatedExam, 
+        updatedAssignedTo,
         id
       ]
     );
